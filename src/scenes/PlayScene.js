@@ -1,18 +1,18 @@
 // 遊ぶ画面（key 'play'・scene.start('play', {index})）
 // 押す＝忍者の場所から線を引き始める／動かす＝線を伸ばす（墨が切れたら先が赤く光って止まる）／離す＝resolveDash を1回だけ呼び、結果を絵にする
 // 線を引いている間は敵の時間が DRAW_SLOW 倍。指は1本だけ（線の途中の2本目は無視＝Review Focus 3）
-import { t } from '../i18n/i18n.js?v=7';
-import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=7';
-import { crisp } from '../ui/pixel.js?v=7';
-import { play as sfx } from '../ui/sfx.js?v=7';
-import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW } from '../config.js?v=7';
-import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=7';
-import { resolveDash, foePos, starsFor } from '../core/dash.js?v=7';
-import { loadSave, writeSave, recordClear, learnKaton, markSeen, recordScore, totalBest } from '../core/save.js?v=7';
-import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=7';
-import { STAGES, katonFor } from '../data/stages.js?v=7';
-import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=7';
-import { platformStore, sendScore } from '../platform.js?v=7';
+import { t } from '../i18n/i18n.js?v=8';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=8';
+import { crisp } from '../ui/pixel.js?v=8';
+import { play as sfx } from '../ui/sfx.js?v=8';
+import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW, HERO_FRAME } from '../config.js?v=8';
+import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=8';
+import { resolveDash, foePos, starsFor } from '../core/dash.js?v=8';
+import { loadSave, writeSave, recordClear, learnKaton, markSeen, recordScore, totalBest } from '../core/save.js?v=8';
+import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=8';
+import { STAGES, katonFor } from '../data/stages.js?v=8';
+import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=8';
+import { platformStore, sendScore } from '../platform.js?v=8';
 
 const LINE = 0x96dcff, RED = 0xe0503c;
 
@@ -22,7 +22,7 @@ export class PlayScene extends Phaser.Scene {
   preload() {
     this.load.image('bg_yashiki', 'assets/art/bg_yashiki.png');
     this.load.image('makibishi', 'assets/art/makibishi.png');
-    this.load.spritesheet('hero', 'assets/art/hero.png', { frameWidth: 54, frameHeight: 54 });
+    this.load.spritesheet('hero', 'assets/art/hero.png', { frameWidth: HERO_FRAME.w, frameHeight: HERO_FRAME.h });
     for (const [id, f] of Object.entries(FOES)) this.load.image(`foe_${id}`, `assets/${f.img}`);
   }
 
@@ -51,7 +51,7 @@ export class PlayScene extends Phaser.Scene {
       let x = -w / 2;
       for (const g of tags) { g.setPosition(x + g.width / 2, 0); x += g.width + 8; }
     }
-    this.hero = this.add.sprite(this.stage.start.x, this.stage.start.y, 'hero', 0).setScale(1.6).setDepth(5);
+    this.hero = this.add.sprite(this.stage.start.x, this.stage.start.y, 'hero', 0).setScale(1.35).setDepth(5);
     this.gfx = this.add.graphics().setDepth(4);
     this.fx = this.add.graphics().setDepth(6);
     this.puffs = [];
@@ -153,13 +153,14 @@ export class PlayScene extends Phaser.Scene {
     D.d = Math.min(D.res.len, D.d + DASH_SPEED * dt);
     this.wt += dt;
     const p = pointAt(D.points, D.d);
-    this.hero.setPosition(p.x, p.y).setFrame(1).setFlipX(Math.cos(p.ang) < 0);
+    const left = Math.cos(p.ang) < 0;
+    this.hero.setPosition(p.x, p.y).setFrame(1).setFlipX(left).setAngle(left ? -14 : 14); // 駆けの絵が届くまでは立ち姿を前へ傾ける
     while (D.ki < D.res.kills.length && D.res.kills[D.ki].d <= D.d) this.slay(D.res.kills[D.ki++].id, D);
     while (D.hi < D.res.hits.length && D.res.hits[D.hi].d <= D.d) this.wound(D.res.hits[D.hi++].id);
     D.bi = D.bi ?? 0;
     while (D.bi < D.res.blocked.length && D.res.blocked[D.bi].d <= D.d) this.blocked(D.res.blocked[D.bi++].id, D.res);
     if (D.d < D.res.len) return;
-    this.hero.setFrame(0);
+    this.hero.setFrame(0).setAngle(0);
     this.dash = null;
     if (D.res.trapHit) return this.fail();
     if (D.res.burn) this.burn(D.res.burn);

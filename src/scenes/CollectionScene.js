@@ -1,12 +1,12 @@
 // 図鑑（key 'collection'）：2列×5段の札・押すと説明・まだ出会っていない物は「？」
-import { t } from '../i18n/i18n.js?v=7';
-import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=7';
-import { crisp } from '../ui/pixel.js?v=7';
-import { W, H } from '../config.js?v=7';
-import { loadSave } from '../core/save.js?v=7';
-import { COLLECTION, visible } from '../data/collection.js?v=7';
-import { FOES } from '../data/foes.js?v=7';
-import { platformStore } from '../platform.js?v=7';
+import { t } from '../i18n/i18n.js?v=8';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=8';
+import { crisp } from '../ui/pixel.js?v=8';
+import { W, H, HERO_FRAME } from '../config.js?v=8';
+import { loadSave } from '../core/save.js?v=8';
+import { COLLECTION, visible } from '../data/collection.js?v=8';
+import { FOES } from '../data/foes.js?v=8';
+import { platformStore } from '../platform.js?v=8';
 
 export class CollectionScene extends Phaser.Scene {
   constructor() { super('collection'); }
@@ -25,7 +25,7 @@ export class CollectionScene extends Phaser.Scene {
       const box = this.add.rectangle(x, y, 290, 155, 0x1b1838).setStrokeStyle(3, on ? 0xc9a227 : 0x3a3550);
       if (on) {
         const img = this.add.image(x - 80, y, `col_${c.id}`);
-        if (c.id === 'ninjutsu' || c.id === 'katon') img.setCrop(0, 0, 54, 54).setPosition(x - 80 + 27, y);
+        if (c.id === 'ninjutsu' || c.id === 'katon') img.setCrop(0, 0, HERO_FRAME.w, HERO_FRAME.h).setPosition(x - 80 + HERO_FRAME.w / 2, y);
         img.setScale(Math.min(110 / img.width, 110 / img.height, 2) * (c.id === 'makibishi' ? 4 : 1));
         if (c.id === 'katon') img.setTint(0xff9a40);
         this.add.text(x + 50, y, t(`col.name.${c.id}`), textStyle(28)).setOrigin(0.5).setWordWrapWidth(170);
@@ -44,7 +44,7 @@ export class CollectionScene extends Phaser.Scene {
     g.add(shade);
     g.add(this.add.rectangle(0, 0, 620, 760, 0x14122a).setStrokeStyle(4, 0xc9a227));
     const img = this.add.image(0, -170, `col_${c.id}`);
-    if (c.id === 'ninjutsu' || c.id === 'katon') img.setCrop(0, 0, 54, 54).setPosition(27, -170);
+    if (c.id === 'ninjutsu' || c.id === 'katon') img.setCrop(0, 0, HERO_FRAME.w, HERO_FRAME.h).setPosition(HERO_FRAME.w / 2, -170);
     img.setScale(Math.min(260 / img.width, 260 / img.height, 4) * (c.id === 'makibishi' ? 3 : 1));
     if (c.id === 'katon') img.setTint(0xff9a40);
     g.add(img);

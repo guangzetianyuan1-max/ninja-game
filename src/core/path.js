@@ -1,6 +1,6 @@
 // 線の計算（画面から離した純粋な関数・tests/path.test.js）
 // 線は忍者の今の場所から始まる。墨（ink）を使い切ったら、その所で止まり clipped=true（その後の指の動きは線にならない＝本人の決定）
-import { W, H, MIN_STROKE, STEP } from '../config.js?v=7';
+import { W, H, MIN_STROKE, STEP } from '../config.js?v=8';
 
 const dist = (a, b) => Math.hypot(b.x - a.x, b.y - a.y);
 
