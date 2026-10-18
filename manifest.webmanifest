@@ -1,0 +1,16 @@
+{
+ "name": "忍び百鬼夜行 Ninja Night Parade",
+ "short_name": "忍び百鬼夜行",
+ "start_url": "./",
+ "display": "fullscreen",
+ "orientation": "portrait",
+ "background_color": "#0b0a16",
+ "theme_color": "#0b0a16",
+ "icons": [
+  {
+   "src": "assets/art/icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png"
+  }
+ ]
+}
