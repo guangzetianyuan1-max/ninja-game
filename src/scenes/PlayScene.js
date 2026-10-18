@@ -1,18 +1,18 @@
 // 遊ぶ画面（key 'play'・scene.start('play', {index})）
 // 押す＝忍者の場所から線を引き始める／動かす＝線を伸ばす（墨が切れたら先が赤く光って止まる）／離す＝resolveDash を1回だけ呼び、結果を絵にする
 // 線を引いている間は敵の時間が DRAW_SLOW 倍。指は1本だけ（線の途中の2本目は無視＝Review Focus 3）
-import { t } from '../i18n/i18n.js?v=4';
-import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=4';
-import { crisp } from '../ui/pixel.js?v=4';
-import { play as sfx } from '../ui/sfx.js?v=4';
-import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW } from '../config.js?v=4';
-import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=4';
-import { resolveDash, foePos, starsFor } from '../core/dash.js?v=4';
-import { loadSave, writeSave, recordClear, learnKaton, markSeen, recordScore, totalBest } from '../core/save.js?v=4';
-import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=4';
-import { STAGES, katonFor } from '../data/stages.js?v=4';
-import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=4';
-import { platformStore, sendScore } from '../platform.js?v=4';
+import { t } from '../i18n/i18n.js?v=5';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=5';
+import { crisp } from '../ui/pixel.js?v=5';
+import { play as sfx } from '../ui/sfx.js?v=5';
+import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW } from '../config.js?v=5';
+import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=5';
+import { resolveDash, foePos, starsFor } from '../core/dash.js?v=5';
+import { loadSave, writeSave, recordClear, learnKaton, markSeen, recordScore, totalBest } from '../core/save.js?v=5';
+import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=5';
+import { STAGES, katonFor } from '../data/stages.js?v=5';
+import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=5';
+import { platformStore, sendScore } from '../platform.js?v=5';
 
 const LINE = 0x96dcff, RED = 0xe0503c;
 
@@ -91,6 +91,7 @@ export class PlayScene extends Phaser.Scene {
     this.tweens.add({ targets: tx, y: y - 100, duration: 260, ease: 'Quad.out', onComplete: () => {
       this.tweens.add({ targets: tx, x: W / 2, y: 60, scale: 0.6, duration: 420, ease: 'Quad.in', onComplete: () => {
         tx.destroy(); this.shown += pts; this.scoreText.setText(t('play.score', { n: this.shown }));
+        this.tweens.killTweensOf(this.scoreText); this.scoreText.setScale(1); // 前の膨らみを止めてから（10/18 本人「倍の大きさに膨らむ」＝続けて入ると重なって大きくなった）
         this.tweens.add({ targets: this.scoreText, scale: 1.25, yoyo: true, duration: 90 });
       } });
     } });
