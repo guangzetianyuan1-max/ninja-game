@@ -1,8 +1,8 @@
 // 表紙：題・ひと言・「たたいて始める」。描いたら YouTube に firstFrameReady、たたける時に gameReady
-import { t } from '../i18n/i18n.js?v=8';
-import { textStyle, GOLD } from '../ui/text.js?v=8';
-import { W, H } from '../config.js?v=8';
-import { signalFirstFrame, signalGameReady } from '../platform.js?v=8';
+import { t } from '../i18n/i18n.js?v=9';
+import { textStyle, GOLD } from '../ui/text.js?v=9';
+import { W, H } from '../config.js?v=9';
+import { signalFirstFrame, signalGameReady } from '../platform.js?v=9';
 
 export class TitleScene extends Phaser.Scene {
   constructor() { super('title'); }
