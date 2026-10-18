@@ -1,12 +1,12 @@
 // src/main.js — 言葉と記録を決めて Phaser を始める（相撲ゲームの main.js と同じ分かれ道・同意書と♪の札は無い）
-import { TitleScene } from './scenes/TitleScene.js?v=11';
-import { PlayScene } from './scenes/PlayScene.js?v=11';
-import { MapScene } from './scenes/MapScene.js?v=11';
-import { CollectionScene } from './scenes/CollectionScene.js?v=11';
-import { ClearScene } from './scenes/ClearScene.js?v=11';
-import { initLang, setLang } from './i18n/i18n.js?v=11';
-import { isPlayables, initPlatform, playablesLang, platformStore, onYtPause } from './platform.js?v=11';
-import { W, H } from './config.js?v=11';
+import { TitleScene } from './scenes/TitleScene.js?v=12';
+import { PlayScene } from './scenes/PlayScene.js?v=12';
+import { MapScene } from './scenes/MapScene.js?v=12';
+import { CollectionScene } from './scenes/CollectionScene.js?v=12';
+import { ClearScene } from './scenes/ClearScene.js?v=12';
+import { initLang, setLang } from './i18n/i18n.js?v=12';
+import { isPlayables, initPlatform, playablesLang, platformStore, onYtPause } from './platform.js?v=12';
+import { W, H } from './config.js?v=12';
 
 export const SCENES = [TitleScene, MapScene, PlayScene, CollectionScene, ClearScene];
 

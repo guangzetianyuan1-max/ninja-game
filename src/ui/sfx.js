@@ -1,5 +1,5 @@
 // 効果音（合成・音のファイルなし・小さめ）。Playables では YouTube の消音に従う
-import { isPlayables, ytAudioEnabled, onYtAudioChange } from '../platform.js?v=11';
+import { isPlayables, ytAudioEnabled, onYtAudioChange } from '../platform.js?v=12';
 
 let ac = null, muted = isPlayables() ? !ytAudioEnabled() : false;
 if (isPlayables()) onYtAudioChange((on) => { muted = !on; });

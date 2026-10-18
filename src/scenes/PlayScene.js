@@ -1,18 +1,18 @@
 // 遊ぶ画面（key 'play'・scene.start('play', {index})）
 // 押す＝忍者の場所から線を引き始める／動かす＝線を伸ばす（墨が切れたら先が赤く光って止まる）／離す＝resolveDash を1回だけ呼び、結果を絵にする
 // 線を引いている間は敵の時間が DRAW_SLOW 倍。指は1本だけ（線の途中の2本目は無視＝Review Focus 3）
-import { t } from '../i18n/i18n.js?v=11';
-import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=11';
-import { crisp } from '../ui/pixel.js?v=11';
-import { play as sfx } from '../ui/sfx.js?v=11';
-import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW, HERO_FRAME } from '../config.js?v=11';
-import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=11';
-import { resolveDash, foePos, starsFor } from '../core/dash.js?v=11';
-import { loadSave, writeSave, recordClear, learnKaton, markSeen, recordScore, totalBest } from '../core/save.js?v=11';
-import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=11';
-import { STAGES, katonFor } from '../data/stages.js?v=11';
-import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=11';
-import { platformStore, sendScore } from '../platform.js?v=11';
+import { t } from '../i18n/i18n.js?v=12';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=12';
+import { crisp } from '../ui/pixel.js?v=12';
+import { play as sfx } from '../ui/sfx.js?v=12';
+import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW, HERO_FRAME } from '../config.js?v=12';
+import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=12';
+import { resolveDash, foePos, starsFor } from '../core/dash.js?v=12';
+import { loadSave, writeSave, recordClear, learnKaton, markSeen, recordScore, totalBest } from '../core/save.js?v=12';
+import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=12';
+import { STAGES, katonFor } from '../data/stages.js?v=12';
+import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=12';
+import { platformStore, sendScore } from '../platform.js?v=12';
 
 const LINE = 0x96dcff, RED = 0xe0503c;
 
@@ -23,6 +23,7 @@ export class PlayScene extends Phaser.Scene {
     this.load.image('bg_yashiki', 'assets/art/bg_yashiki.png');
     this.load.image('makibishi', 'assets/art/makibishi.png');
     this.load.image('pose_in', 'assets/art/pose_in.png'); // 印を結ぶ忍者（火遁）
+    this.load.image('pose_noto', 'assets/art/pose_noto.png'); // 納刀の決め（クリア）
     this.load.spritesheet('hero', 'assets/art/hero.png', { frameWidth: HERO_FRAME.w, frameHeight: HERO_FRAME.h });
     for (const [id, f] of Object.entries(FOES)) this.load.image(`foe_${id}`, `assets/${f.img}`);
   }
@@ -183,8 +184,9 @@ export class PlayScene extends Phaser.Scene {
     this.dash = null;
     if (D.res.trapHit) return this.fail();
     if (D.res.burn) this.burn(D.res.burn);
-    if (D.combo >= 2) this.banner(t('play.combo', { n: D.combo }), '', 0.8);
-    if (this.foes.every((f) => f.dead)) this.clear();
+    const allDead = this.foes.every((f) => f.dead);
+    if (D.combo >= 2 && !allDead) this.banner(t('play.combo', { n: D.combo }), '', 0.8); // 最後の1本の連斬は納刀の決めの中で見せる（重ならないように）
+    if (allDead) this.clear(D.combo);
   }
 
   slay(id, D) {
@@ -285,7 +287,7 @@ export class PlayScene extends Phaser.Scene {
     this.time.delayedCall(1400, () => this.scene.restart({ index: this.index }));
   }
 
-  clear() {
+  clear(lastCombo = 0) {
     this.over = true; sfx('clear');
     const stars = starsFor(this.moves, this.stage.par);
     let s = recordClear(this.save, this.stage.id, stars);
@@ -296,7 +298,22 @@ export class PlayScene extends Phaser.Scene {
     s = recordScore(s, this.stage.id, total);
     this.save = s; writeSave(platformStore(), s);
     sendScore(totalBest(s)); // YouTube 版：10の間の最高点の合計
-    this.time.delayedCall(900, () => this.result(stars, { sec, total, isBest }));
+    this.time.delayedCall(300, () => this.notoShow(lastCombo));
+    this.time.delayedCall(1600, () => this.result(stars, { sec, total, isBest }));
+  }
+
+  // 納刀の決め：間をクリアした瞬間、刀を収めた忍者を大きく出す（その後で結果の画面）
+  notoShow(combo) {
+    const c = this.add.container(W / 2, H / 2).setDepth(10);
+    c.add(this.add.rectangle(0, 0, W, 760, 0x000000, 0.55));
+    const img = this.add.image(40, -40, 'pose_noto').setScale(2.6);
+    c.add(img);
+    c.add(this.add.text(0, 290, t('play.clear'), textStyle(64, GOLD)).setOrigin(0.5));
+    if (combo >= 2) c.add(this.add.text(0, -330, t('play.combo', { n: combo }), textStyle(52, '#ffffff')).setOrigin(0.5));
+    c.setAlpha(0);
+    this.tweens.add({ targets: c, alpha: 1, duration: 160 });
+    this.tweens.add({ targets: img, x: 0, duration: 420, ease: 'Quad.out' });
+    this.tweens.add({ targets: c, alpha: 0, delay: 1050, duration: 250, onComplete: () => c.destroy() });
   }
 
   result(stars, sc) {
