@@ -57,4 +57,12 @@ export default {
   'jutsu.mark.katon': "火",
   'col.weak': "効く術：{list}",
   'play.blocked': "斬れない！ {j}で",
+  'play.score': "点 {n}",
+  'play.time': "{s}秒",
+  'play.go': "始め！",
+  'res.kill': "敵　{n}点",
+  'res.star': "星　{n}点",
+  'res.speed': "速さ {s}秒　{n}点",
+  'res.total': "合計 {n}点",
+  'res.best': "新記録！",
 };

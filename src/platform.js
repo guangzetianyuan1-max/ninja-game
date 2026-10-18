@@ -104,3 +104,13 @@ export function onYtPause(pause, resume) {
 
 // 振動を使ってよいか（Playables 版は入り切りの設定を置かないので使わない）
 export const vibrateAllowed = () => !isPlayables();
+
+// 点数を YouTube へ（Playables 版だけ・SDK の sendScore＝整数・YouTube は高い方を出す）。10/18 本人「A」＝10の間の最高点の合計を送る
+export function sendScore(value) {
+  if (!isPlayables()) return;
+  try {
+    const y = sdk();
+    const p = y && y.engagement && y.engagement.sendScore ? y.engagement.sendScore({ value: Math.floor(value) }) : null;
+    if (p && p.catch) p.catch(() => {});
+  } catch { /* 送れなくても遊べる */ }
+}

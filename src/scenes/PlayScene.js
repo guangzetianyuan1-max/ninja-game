@@ -1,17 +1,18 @@
 // 遊ぶ画面（key 'play'・scene.start('play', {index})）
 // 押す＝忍者の場所から線を引き始める／動かす＝線を伸ばす（墨が切れたら先が赤く光って止まる）／離す＝resolveDash を1回だけ呼び、結果を絵にする
 // 線を引いている間は敵の時間が DRAW_SLOW 倍。指は1本だけ（線の途中の2本目は無視＝Review Focus 3）
-import { t } from '../i18n/i18n.js?v=3';
-import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=3';
-import { crisp } from '../ui/pixel.js?v=3';
-import { play as sfx } from '../ui/sfx.js?v=3';
-import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW } from '../config.js?v=3';
-import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=3';
-import { resolveDash, foePos, starsFor } from '../core/dash.js?v=3';
-import { loadSave, writeSave, recordClear, learnKaton, markSeen } from '../core/save.js?v=3';
-import { STAGES, katonFor } from '../data/stages.js?v=3';
-import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=3';
-import { platformStore } from '../platform.js?v=3';
+import { t } from '../i18n/i18n.js?v=4';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=4';
+import { crisp } from '../ui/pixel.js?v=4';
+import { play as sfx } from '../ui/sfx.js?v=4';
+import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW } from '../config.js?v=4';
+import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=4';
+import { resolveDash, foePos, starsFor } from '../core/dash.js?v=4';
+import { loadSave, writeSave, recordClear, learnKaton, markSeen, recordScore, totalBest } from '../core/save.js?v=4';
+import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=4';
+import { STAGES, katonFor } from '../data/stages.js?v=4';
+import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=4';
+import { platformStore, sendScore } from '../platform.js?v=4';
 
 const LINE = 0x96dcff, RED = 0xe0503c;
 
@@ -34,6 +35,7 @@ export class PlayScene extends Phaser.Scene {
     this.learned = false; this.ghost = null; this.hint = null; // 同じ画面の部品を使い回す＝前の間の状態を持ち越さない（最終点検 I2・I3）
     if (this.stage.lesson === 'katon' && !this.save.katon) { this.save = learnKaton(this.save); writeSave(platformStore(), this.save); this.learned = true; }
     this.wt = 0; this.stop = 0; this.moves = 0; this.stroke = null; this.pid = null; this.dash = null; this.over = false; this.slain = [];
+    this.ready = false; this.clock = 0; this.killPts = 0; this.shown = 0; // 3・2・1 の後で動く・時計・敵の点・上の数字が今見せている点
 
     this.add.image(0, 0, 'bg_yashiki').setOrigin(0).setScale(W / 180);
     this.traps = this.stage.traps.map((p, i) => this.add.image(p.x, p.y, 'makibishi').setScale(4).setAngle(i * 23));
@@ -55,16 +57,43 @@ export class PlayScene extends Phaser.Scene {
     this.puffs = [];
 
     this.add.text(30, 40, t('play.stage', { n: this.index + 1 }), textStyle(40, GOLD)).setOrigin(0, 0.5).setDepth(8);
+    this.clockText = this.add.text(30, 84, t('play.time', { s: '0.0' }), textStyle(30)).setOrigin(0, 0.5).setDepth(8);
+    this.scoreText = this.add.text(W / 2, 60, t('play.score', { n: 0 }), textStyle(44, '#ffffff')).setOrigin(0.5).setDepth(8); // 上の点数（10/18 本人「上部に点数カウンター」）
     this.movesText = this.add.text(W - 30, 40, '', textStyle(32)).setOrigin(1, 0.5).setDepth(8);
     this.add.text(W - 30, 84, t('play.par', { n: this.stage.par[0] }), textStyle(28)).setOrigin(1, 0.5).setDepth(8);
     this.inkBar = this.add.graphics().setDepth(8);
     this.refreshMoves();
     this.showLesson();
+    this.countdown();
 
     this.input.on('pointerdown', (p) => this.down(p));
     this.input.on('pointermove', (p) => this.move(p));
     this.input.on('pointerup', (p) => this.up(p));
     this.input.on('pointerupoutside', (p) => this.up(p)); // 画面の外で離した時（マウス）も線を終える（最終点検 I1）
+  }
+
+  // 3・2・1・始め！（10/18 本人）。それまでは線を引けず、敵も止まっている
+  countdown() {
+    const words = ['3', '2', '1', t('play.go')];
+    words.forEach((w, i) => this.time.delayedCall(i * 650, () => {
+      const tx = this.add.text(W / 2, H / 2 - 40, w, textStyle(i < 3 ? 160 : 110, GOLD)).setOrigin(0.5).setDepth(11).setScale(1.4);
+      this.tweens.add({ targets: tx, scale: 1, duration: 200 });
+      this.tweens.add({ targets: tx, alpha: 0, delay: 420, duration: 220, onComplete: () => tx.destroy() });
+      sfx(i < 3 ? 'hit' : 'swish');
+      if (i === 3) this.ready = true;
+    }));
+  }
+
+  // 点：敵の上に「+N」→ 上の点数へ飛んで、着いたら合計に足す
+  award(pts, x, y) {
+    this.killPts += pts;
+    const tx = this.add.text(x, y - 40, `+${pts}`, textStyle(40, GOLD)).setOrigin(0.5).setDepth(9);
+    this.tweens.add({ targets: tx, y: y - 100, duration: 260, ease: 'Quad.out', onComplete: () => {
+      this.tweens.add({ targets: tx, x: W / 2, y: 60, scale: 0.6, duration: 420, ease: 'Quad.in', onComplete: () => {
+        tx.destroy(); this.shown += pts; this.scoreText.setText(t('play.score', { n: this.shown }));
+        this.tweens.add({ targets: this.scoreText, scale: 1.25, yoyo: true, duration: 90 });
+      } });
+    } });
   }
 
   refreshMoves() { this.movesText.setText(t('play.moves', { n: this.moves })); }
@@ -81,7 +110,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   down(p) {
-    if (this.dash || this.over || this.pid !== null) return; // 指は1本だけ
+    if (!this.ready || this.dash || this.over || this.pid !== null) return; // 合図の前は引けない・指は1本だけ
     this.pid = p.id;
     this.stroke = startStroke({ x: this.hero.x, y: this.hero.y });
     this.stroke = addPoint(this.stroke, { x: p.worldX, y: p.worldY }, this.stage.ink);
@@ -111,7 +140,8 @@ export class PlayScene extends Phaser.Scene {
     const real = Math.min(0.05, deltaMs / 1000);
     let dt = real;
     if (this.stop > 0) { this.stop -= real; dt = 0; }
-    if (!this.dash) this.wt += dt * (this.stroke ? DRAW_SLOW : 1);
+    if (this.ready && !this.over) { this.clock += real; this.clockText.setText(t('play.time', { s: this.clock.toFixed(1) })); } // 時計は本当の時間（ゆっくりや止めに関係なく進む）
+    if (!this.dash && this.ready) this.wt += dt * (this.stroke ? DRAW_SLOW : 1);
     if (this.dash && dt > 0) this.stepDash(dt);
     for (const f of this.foes) if (!f.dead) { const q = foePos(f, this.wt); f.spr.setPosition(q.x, q.y + Math.sin(this.wt * 3 + q.x) * 3); f.badge?.setPosition(q.x, q.y - f.spr.displayHeight / 2 - 8); }
     this.draw(real);
@@ -140,6 +170,7 @@ export class PlayScene extends Phaser.Scene {
     const f = this.foes.find((o) => o.id === id);
     if (!f || f.dead) return;
     f.dead = true; D.combo++; f.badge?.destroy();
+    this.award(FOES[f.type].boss ? BOSS_KILL : killPoints(D.combo), f.spr.x, f.spr.y);
     this.slain.push(f.type);
     this.puff(f.spr.x, f.spr.y, 0xd8d4e8);
     this.tweens.add({ targets: f.spr, alpha: 0, scale: f.spr.scale * 1.3, duration: 220, onComplete: () => f.spr.destroy() });
@@ -160,6 +191,7 @@ export class PlayScene extends Phaser.Scene {
     const f = this.foes.find((o) => o.id === id);
     if (!f || f.dead) return;
     f.hp -= 1;
+    this.award(BOSS_HIT, f.spr.x, f.spr.y);
     this.tweens.add({ targets: f.spr, alpha: 0.3, yoyo: true, duration: 90, repeat: 2 });
     this.slashMark(f.spr.x, f.spr.y, 0.6);
     this.stop = HITSTOP; this.cameras.main.shake(120, 0.01); sfx('hit');
@@ -237,16 +269,24 @@ export class PlayScene extends Phaser.Scene {
     let s = recordClear(this.save, this.stage.id, stars);
     for (const type of this.slain) s = markSeen(s, type);
     if (this.stage.traps.length) s = markSeen(s, 'makibishi'); // まきびしの間を越えたら図鑑に
+    const sec = this.clock, total = roomScore({ killPts: this.killPts, stars, sec });
+    const isBest = total > (s.best[this.stage.id] ?? 0);
+    s = recordScore(s, this.stage.id, total);
     this.save = s; writeSave(platformStore(), s);
-    this.time.delayedCall(500, () => this.result(stars));
+    sendScore(totalBest(s)); // YouTube 版：10の間の最高点の合計
+    this.time.delayedCall(900, () => this.result(stars, { sec, total, isBest }));
   }
 
-  result(stars) {
+  result(stars, sc) {
     const c = this.add.container(W / 2, H / 2).setDepth(10);
-    c.add(this.add.rectangle(0, 0, 600, 640, 0x0b0a16, 0.92).setStrokeStyle(4, 0xc9a227));
-    c.add(this.add.text(0, -230, t('play.clear'), textStyle(56, GOLD)).setOrigin(0.5));
-    c.add(this.add.text(0, -130, '★'.repeat(stars) + '☆'.repeat(3 - stars), textStyle(84, GOLD)).setOrigin(0.5));
-    c.add(this.add.text(0, -50, t('play.moves', { n: this.moves }), textStyle(32)).setOrigin(0.5));
+    c.add(this.add.rectangle(0, 0, 620, 900, 0x0b0a16, 0.94).setStrokeStyle(4, 0xc9a227));
+    c.add(this.add.text(0, -380, t('play.clear'), textStyle(56, GOLD)).setOrigin(0.5));
+    c.add(this.add.text(0, -295, '★'.repeat(stars) + '☆'.repeat(3 - stars), textStyle(84, GOLD)).setOrigin(0.5));
+    // 点の内訳：敵・星・速さ → 合計
+    const lines = [t('res.kill', { n: this.killPts }), t('res.star', { n: stars * 1000 }), t('res.speed', { s: sc.sec.toFixed(1), n: timeBonus(sc.sec) })];
+    lines.forEach((l, i) => c.add(this.add.text(0, -200 + i * 50, l, textStyle(32)).setOrigin(0.5)));
+    c.add(this.add.text(0, -40, t('res.total', { n: sc.total }), textStyle(52, '#ffffff')).setOrigin(0.5));
+    if (sc.isBest) c.add(this.add.text(0, 20, t('res.best'), textStyle(32, '#ff9a40')).setOrigin(0.5));
     const last = this.index >= STAGES.length - 1;
     const btns = [
       [last ? 'play.map' : 'play.next', () => (last ? this.scene.start('map') : this.scene.start('play', { index: this.index + 1 }))],
@@ -254,7 +294,7 @@ export class PlayScene extends Phaser.Scene {
       ...(last ? [] : [['play.map', () => this.scene.start('map')]]),
     ];
     btns.forEach(([key, fn], i) => {
-      const y = 50 + i * 100;
+      const y = 110 + i * 100;
       const r = this.add.rectangle(0, y, 420, 80, i === 0 ? 0xe0a83a : 0x2b2140).setStrokeStyle(3, 0xf3e6c0).setInteractive({ useHandCursor: true });
       c.add(r); c.add(this.add.text(0, y, t(key), i === 0 ? buttonStyle(40) : textStyle(38)).setOrigin(0.5));
       this.time.delayedCall(500, () => r.once('pointerup', fn)); // 開いた直後のたたきは数えない

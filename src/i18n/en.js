@@ -57,4 +57,12 @@ export default {
   'jutsu.mark.katon': "FIRE",
   'col.weak': "Weak to: {list}",
   'play.blocked': "Can't cut! Use {j}",
+  'play.score': "Score {n}",
+  'play.time': "{s}s",
+  'play.go': "GO!",
+  'res.kill': "Foes  {n}",
+  'res.star': "Stars  {n}",
+  'res.speed': "Speed {s}s  {n}",
+  'res.total': "Total {n}",
+  'res.best': "New best!",
 };
