@@ -12,3 +12,9 @@ export function textStyle(size, color = INK_COLOR) {
     align: 'center',
   };
 }
+
+// 金のボタンの字：濃い字だけ・縁取りなし（10/18 本人「字体が悪く良く分からない」＝濃い字に濃い縁取りでにじんでいた）
+export const BUTTON_INK = '#1a1030';
+export function buttonStyle(size) {
+  return { fontFamily: 'game, sans-serif', fontSize: `${size}px`, color: BUTTON_INK, align: 'center', strokeThickness: 0 };
+}

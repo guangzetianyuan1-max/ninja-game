@@ -51,4 +51,10 @@ export default {
   'col.unknown': '?',
   'col.close': 'Close',
   'col.back': 'Back',
+  'jutsu.slash': "Blade Dash",
+  'jutsu.katon': "Fire Release",
+  'jutsu.mark.slash': "CUT",
+  'jutsu.mark.katon': "FIRE",
+  'col.weak': "Weak to: {list}",
+  'play.blocked': "Can't cut! Use {j}",
 };

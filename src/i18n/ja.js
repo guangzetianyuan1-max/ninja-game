@@ -51,4 +51,10 @@ export default {
   'col.unknown': '？',
   'col.close': 'とじる',
   'col.back': 'もどる',
+  'jutsu.slash': "一の太刀",
+  'jutsu.katon': "火遁",
+  'jutsu.mark.slash': "斬",
+  'jutsu.mark.katon': "火",
+  'col.weak': "効く術：{list}",
+  'play.blocked': "斬れない！ {j}で",
 };

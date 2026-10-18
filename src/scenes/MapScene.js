@@ -1,10 +1,11 @@
 // 間を選ぶ（key 'map'）：武家屋敷の10の間を2列×5段・星・開いていない間は鍵・図鑑へ
-import { t } from '../i18n/i18n.js';
-import { textStyle, GOLD } from '../ui/text.js';
-import { W } from '../config.js';
-import { loadSave, isOpen } from '../core/save.js';
-import { STAGES } from '../data/stages.js';
-import { platformStore } from '../platform.js';
+import { t } from '../i18n/i18n.js?v=2';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=2';
+import { crisp } from '../ui/pixel.js?v=2';
+import { W } from '../config.js?v=2';
+import { loadSave, isOpen } from '../core/save.js?v=2';
+import { STAGES } from '../data/stages.js?v=2';
+import { platformStore } from '../platform.js?v=2';
 
 export class MapScene extends Phaser.Scene {
   constructor() { super('map'); }
@@ -12,6 +13,7 @@ export class MapScene extends Phaser.Scene {
   preload() { this.load.image('bg_yashiki', 'assets/art/bg_yashiki.png'); }
 
   create() {
+    crisp(this);
     this.add.image(0, 0, 'bg_yashiki').setOrigin(0).setScale(W / 180).setAlpha(0.55);
     const save = loadSave(platformStore()), ids = STAGES.map((s) => s.id);
     this.add.rectangle(W / 2, 110, W, 120, 0x0b0a16, 0.8);
@@ -30,7 +32,7 @@ export class MapScene extends Phaser.Scene {
 
   button(x, y, label, fn) {
     const r = this.add.rectangle(x, y, 280, 90, 0xe0a83a).setStrokeStyle(3, 0xf3e6c0);
-    this.add.text(x, y, label, textStyle(36, '#1a1030')).setOrigin(0.5);
+    this.add.text(x, y, label, buttonStyle(40)).setOrigin(0.5);
     this.time.delayedCall(400, () => r.setInteractive({ useHandCursor: true }).on('pointerup', fn)); // 開いた直後のたたきは数えない
   }
 }

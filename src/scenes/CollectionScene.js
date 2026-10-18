@@ -1,10 +1,12 @@
 // 図鑑（key 'collection'）：2列×5段の札・押すと説明・まだ出会っていない物は「？」
-import { t } from '../i18n/i18n.js';
-import { textStyle, GOLD } from '../ui/text.js';
-import { W, H } from '../config.js';
-import { loadSave } from '../core/save.js';
-import { COLLECTION, visible } from '../data/collection.js';
-import { platformStore } from '../platform.js';
+import { t } from '../i18n/i18n.js?v=2';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=2';
+import { crisp } from '../ui/pixel.js?v=2';
+import { W, H } from '../config.js?v=2';
+import { loadSave } from '../core/save.js?v=2';
+import { COLLECTION, visible } from '../data/collection.js?v=2';
+import { FOES } from '../data/foes.js?v=2';
+import { platformStore } from '../platform.js?v=2';
 
 export class CollectionScene extends Phaser.Scene {
   constructor() { super('collection'); }
@@ -12,6 +14,7 @@ export class CollectionScene extends Phaser.Scene {
   preload() { for (const c of COLLECTION) this.load.image(`col_${c.id}`, `assets/${c.img}`); }
 
   create() {
+    crisp(this);
     this.cameras.main.setBackgroundColor('#0b0a16');
     this.open = null; // 前に開いた札を持ち越さない（最終点検 I3）
     const save = loadSave(platformStore()), seen = COLLECTION.filter((c) => visible(c, save));
@@ -30,7 +33,7 @@ export class CollectionScene extends Phaser.Scene {
       } else this.add.text(x, y, t('col.unknown'), textStyle(56, '#6d6884')).setOrigin(0.5);
     });
     const back = this.add.rectangle(W / 2, 1180, 320, 90, 0xe0a83a).setStrokeStyle(3, 0xf3e6c0);
-    this.add.text(W / 2, 1180, t('col.back'), textStyle(36, '#1a1030')).setOrigin(0.5);
+    this.add.text(W / 2, 1180, t('col.back'), buttonStyle(40)).setOrigin(0.5);
     this.time.delayedCall(400, () => back.setInteractive({ useHandCursor: true }).on('pointerup', () => this.scene.start('map')));
   }
 
@@ -45,8 +48,9 @@ export class CollectionScene extends Phaser.Scene {
     img.setScale(Math.min(260 / img.width, 260 / img.height, 4) * (c.id === 'makibishi' ? 3 : 1));
     if (c.id === 'katon') img.setTint(0xff9a40);
     g.add(img);
-    g.add(this.add.text(0, 30, t(`col.name.${c.id}`), textStyle(48, GOLD)).setOrigin(0.5));
-    g.add(this.add.text(0, 160, t(`col.desc.${c.id}`), { ...textStyle(32), wordWrap: { width: 540, useAdvancedWrap: true } }).setOrigin(0.5));
+    g.add(this.add.text(0, 10, t(`col.name.${c.id}`), textStyle(48, GOLD)).setOrigin(0.5));
+    if (c.kind === 'foe') g.add(this.add.text(0, 70, t('col.weak', { list: FOES[c.id].weak.map((j) => t(`jutsu.${j}`)).join(' / ') }), textStyle(32, '#ff9a40')).setOrigin(0.5)); // 効く術
+    g.add(this.add.text(0, 190, t(`col.desc.${c.id}`), { ...textStyle(32), wordWrap: { width: 540, useAdvancedWrap: true } }).setOrigin(0.5));
     g.add(this.add.text(0, 320, t('col.close'), textStyle(36)).setOrigin(0.5));
     this.open = g;
     this.time.delayedCall(300, () => shade.once('pointerup', () => { g.destroy(); this.open = null; }));

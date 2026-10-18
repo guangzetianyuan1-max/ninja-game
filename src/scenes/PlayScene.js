@@ -1,16 +1,17 @@
 // 遊ぶ画面（key 'play'・scene.start('play', {index})）
 // 押す＝忍者の場所から線を引き始める／動かす＝線を伸ばす（墨が切れたら先が赤く光って止まる）／離す＝resolveDash を1回だけ呼び、結果を絵にする
 // 線を引いている間は敵の時間が DRAW_SLOW 倍。指は1本だけ（線の途中の2本目は無視＝Review Focus 3）
-import { t } from '../i18n/i18n.js';
-import { textStyle, GOLD } from '../ui/text.js';
-import { play as sfx } from '../ui/sfx.js';
-import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW } from '../config.js';
-import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js';
-import { resolveDash, foePos, starsFor } from '../core/dash.js';
-import { loadSave, writeSave, recordClear, learnKaton, markSeen } from '../core/save.js';
-import { STAGES, katonFor } from '../data/stages.js';
-import { FOES, foeFlags } from '../data/foes.js';
-import { platformStore } from '../platform.js';
+import { t } from '../i18n/i18n.js?v=2';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=2';
+import { crisp } from '../ui/pixel.js?v=2';
+import { play as sfx } from '../ui/sfx.js?v=2';
+import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW } from '../config.js?v=2';
+import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=2';
+import { resolveDash, foePos, starsFor } from '../core/dash.js?v=2';
+import { loadSave, writeSave, recordClear, learnKaton, markSeen } from '../core/save.js?v=2';
+import { STAGES, katonFor } from '../data/stages.js?v=2';
+import { FOES, foeFlags, needsJutsu } from '../data/foes.js?v=2';
+import { platformStore } from '../platform.js?v=2';
 
 const LINE = 0x96dcff, RED = 0xe0503c;
 
@@ -25,6 +26,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   create(data) {
+    crisp(this);
     this.index = Math.max(0, Math.min(STAGES.length - 1, data?.index ?? 0));
     this.stage = STAGES[this.index];
     this.katon = katonFor(this.stage);
@@ -36,6 +38,13 @@ export class PlayScene extends Phaser.Scene {
     this.add.image(0, 0, 'bg_yashiki').setOrigin(0).setScale(W / 180);
     this.traps = this.stage.traps.map((p, i) => this.add.image(p.x, p.y, 'makibishi').setScale(4).setAngle(i * 23));
     this.foes = this.stage.foes.map(foeFlags).map((f) => ({ ...f, spr: this.add.image(f.x, f.y, `foe_${f.type}`).setScale(FOES[f.type].boss ? 1.8 : 1.4) }));
+    // 刀で斬れない敵の頭に、効く術の印（10/18 本人「どの敵にどの術が効くか分かるように」）
+    for (const f of this.foes) {
+      const j = needsJutsu(f.type);
+      if (!j) continue;
+      const tag = this.add.text(0, 0, t(`jutsu.mark.${j}`), { ...textStyle(28, '#ffffff'), backgroundColor: '#c8501e', padding: { x: 10, y: 4 } }).setOrigin(0.5).setDepth(6);
+      f.badge = tag;
+    }
     this.hero = this.add.sprite(this.stage.start.x, this.stage.start.y, 'hero', 0).setScale(1.6).setDepth(5);
     this.gfx = this.add.graphics().setDepth(4);
     this.fx = this.add.graphics().setDepth(6);
@@ -100,7 +109,7 @@ export class PlayScene extends Phaser.Scene {
     if (this.stop > 0) { this.stop -= real; dt = 0; }
     if (!this.dash) this.wt += dt * (this.stroke ? DRAW_SLOW : 1);
     if (this.dash && dt > 0) this.stepDash(dt);
-    for (const f of this.foes) if (!f.dead) { const q = foePos(f, this.wt); f.spr.setPosition(q.x, q.y + Math.sin(this.wt * 3 + q.x) * 3); }
+    for (const f of this.foes) if (!f.dead) { const q = foePos(f, this.wt); f.spr.setPosition(q.x, q.y + Math.sin(this.wt * 3 + q.x) * 3); f.badge?.setPosition(q.x, q.y - f.spr.displayHeight / 2 - 8); }
     this.draw(real);
   }
 
@@ -112,6 +121,8 @@ export class PlayScene extends Phaser.Scene {
     this.hero.setPosition(p.x, p.y).setFrame(1).setFlipX(Math.cos(p.ang) < 0);
     while (D.ki < D.res.kills.length && D.res.kills[D.ki].d <= D.d) this.slay(D.res.kills[D.ki++].id, D);
     while (D.hi < D.res.hits.length && D.res.hits[D.hi].d <= D.d) this.wound(D.res.hits[D.hi++].id);
+    D.bi = D.bi ?? 0;
+    while (D.bi < D.res.blocked.length && D.res.blocked[D.bi].d <= D.d) this.blocked(D.res.blocked[D.bi++].id, D.res);
     if (D.d < D.res.len) return;
     this.hero.setFrame(0);
     this.dash = null;
@@ -124,12 +135,21 @@ export class PlayScene extends Phaser.Scene {
   slay(id, D) {
     const f = this.foes.find((o) => o.id === id);
     if (!f || f.dead) return;
-    f.dead = true; D.combo++;
+    f.dead = true; D.combo++; f.badge?.destroy();
     this.slain.push(f.type);
     this.puff(f.spr.x, f.spr.y, 0xd8d4e8);
     this.tweens.add({ targets: f.spr, alpha: 0, scale: f.spr.scale * 1.3, duration: 220, onComplete: () => f.spr.destroy() });
     this.slashMark(f.spr.x, f.spr.y, pointAt(D.points, D.d).ang);
     this.stop = HITSTOP; this.cameras.main.shake(80, 0.006); sfx('hit');
+  }
+
+  blocked(id, res) {
+    if (res.kills.some((k) => k.id === id)) return; // 同じ駆け抜けの火遁で燃えるなら言わない
+    const f = this.foes.find((o) => o.id === id), j = needsJutsu(f?.type);
+    if (!f || !j) return;
+    this.tweens.add({ targets: f.spr, x: f.spr.x + 8, yoyo: true, duration: 50, repeat: 3 });
+    const msg = this.add.text(f.spr.x, f.spr.y - 20, t('play.blocked', { j: t(`jutsu.${j}`) }), textStyle(32, '#ffd27a')).setOrigin(0.5).setDepth(9);
+    this.tweens.add({ targets: msg, y: msg.y - 70, alpha: 0, delay: 700, duration: 600, onComplete: () => msg.destroy() });
   }
 
   wound(id) {
@@ -232,7 +252,7 @@ export class PlayScene extends Phaser.Scene {
     btns.forEach(([key, fn], i) => {
       const y = 50 + i * 100;
       const r = this.add.rectangle(0, y, 420, 80, i === 0 ? 0xe0a83a : 0x2b2140).setStrokeStyle(3, 0xf3e6c0).setInteractive({ useHandCursor: true });
-      c.add(r); c.add(this.add.text(0, y, t(key), textStyle(36, i === 0 ? '#1a1030' : '#f3e6c0')).setOrigin(0.5));
+      c.add(r); c.add(this.add.text(0, y, t(key), i === 0 ? buttonStyle(40) : textStyle(38)).setOrigin(0.5));
       this.time.delayedCall(500, () => r.once('pointerup', fn)); // 開いた直後のたたきは数えない
     });
   }

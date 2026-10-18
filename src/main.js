@@ -1,11 +1,11 @@
 // src/main.js — 言葉と記録を決めて Phaser を始める（相撲ゲームの main.js と同じ分かれ道・同意書と♪の札は無い）
-import { TitleScene } from './scenes/TitleScene.js';
-import { PlayScene } from './scenes/PlayScene.js';
-import { MapScene } from './scenes/MapScene.js';
-import { CollectionScene } from './scenes/CollectionScene.js';
-import { initLang, setLang } from './i18n/i18n.js';
-import { isPlayables, initPlatform, playablesLang, platformStore, onYtPause } from './platform.js';
-import { W, H } from './config.js';
+import { TitleScene } from './scenes/TitleScene.js?v=2';
+import { PlayScene } from './scenes/PlayScene.js?v=2';
+import { MapScene } from './scenes/MapScene.js?v=2';
+import { CollectionScene } from './scenes/CollectionScene.js?v=2';
+import { initLang, setLang } from './i18n/i18n.js?v=2';
+import { isPlayables, initPlatform, playablesLang, platformStore, onYtPause } from './platform.js?v=2';
+import { W, H } from './config.js?v=2';
 
 export const SCENES = [TitleScene, MapScene, PlayScene, CollectionScene];
 
@@ -24,7 +24,7 @@ function start() {
     type: Phaser.AUTO,
     parent: 'game',
     backgroundColor: '#0b0a16',
-    pixelArt: true, // ドット絵をにじませない
+    pixelArt: false, antialias: true, // 字はなめらかに。ドット絵の絵は src/ui/pixel.js の crisp() で1枚ずつくっきりにする
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: W, height: H },
     input: { activePointers: 2 },
     scene: SCENES,
