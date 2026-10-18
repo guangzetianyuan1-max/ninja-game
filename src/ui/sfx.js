@@ -1,5 +1,5 @@
 // 効果音（合成・音のファイルなし・小さめ）。Playables では YouTube の消音に従う
-import { isPlayables, ytAudioEnabled, onYtAudioChange } from '../platform.js?v=16';
+import { isPlayables, ytAudioEnabled, onYtAudioChange } from '../platform.js?v=17';
 
 let ac = null, muted = isPlayables() ? !ytAudioEnabled() : false;
 if (isPlayables()) onYtAudioChange((on) => { muted = !on; });
@@ -22,6 +22,9 @@ export function play(name) {
     else if (name === 'hit') tone('square', 220, 60, 0.12, 0.08);
     else if (name === 'fail') tone('triangle', 300, 80, 0.5, 0.09);
     else if (name === 'katon') { tone('sawtooth', 120, 600, 0.35, 0.07); tone('triangle', 200, 900, 0.4, 0.05, 0.05); }
+    else if (name === 'thud') { tone('square', 150, 50, 0.12, 0.09); tone('triangle', 90, 40, 0.18, 0.06); }
+    else if (name === 'mark') tone('sine', 1200, 1900, 0.12, 0.05);
+    else if (name === 'warp') { tone('sine', 300, 1600, 0.16, 0.06); tone('sawtooth', 1600, 400, 0.12, 0.03, 0.08); }
     else if (name === 'clear') [523, 659, 784, 1047].forEach((f, i) => tone('sine', f, f, 0.2, 0.06, i * 0.08));
   } catch { /* 音が出ない端末でも遊べる */ }
 }

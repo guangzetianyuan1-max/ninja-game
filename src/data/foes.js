@@ -9,6 +9,13 @@ export const FOES = {
   tesso: { img: 'foes/tesso.png', nameKey: 'foe.tesso', weak: ['slash', 'katon'] },
   nurikabe: { img: 'foes/nurikabe.png', nameKey: 'foe.nurikabe', shield: true, weak: ['katon'] }, // 盾＝線では斬れない・火遁でだけ倒せる
   nekoma: { img: 'foes/nekoma.png', nameKey: 'foe.nekoma', hp: 3, boss: true, weak: ['slash', 'katon'] }, // 武家屋敷のボス（福島RPGの猫魔ヶ岳の化け猫）
+  // 夜の墓地（10/18・設計書 2026-10-18-ninja-bochi-design）。scale＝画面の大きさ（無ければ FOE_SCALE・ボスは BOSS_SCALE）
+  kitsunebi: { img: 'foes/kitsunebi.png', nameKey: 'foe.kitsunebi', weak: ['slash', 'katon'] },
+  onmoraki: { img: 'foes/onmoraki.png', nameKey: 'foe.onmoraki', weak: ['slash', 'katon'] },
+  kyokotsu: { img: 'foes/kyokotsu.png', nameKey: 'foe.kyokotsu', weak: ['slash', 'katon'] },
+  ittan: { img: 'foes/ittan.png', nameKey: 'foe.ittan', weak: ['slash', 'katon'] },
+  gashadokuro: { img: 'foes/gashadokuro.png', nameKey: 'foe.gashadokuro', hp: 2, scale: 2.6, weak: ['slash', 'katon'] }, // 巨大な骸骨＝絵は骨だけで小さい→鬼婆と同じ大きさに
+  onibaba: { img: 'foes/onibaba.png', nameKey: 'foe.onibaba', hp: 3, boss: true, weak: ['slash', 'katon'] }, // 墓地のボス（福島RPGの安達ヶ原の鬼婆）
 };
 
 // 間に置いた敵に、表の shield と hp を写す（src/core/dash.js は表を読まない＝計算を表から離す）

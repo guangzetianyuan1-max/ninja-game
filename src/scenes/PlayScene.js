@@ -1,27 +1,37 @@
 // 遊ぶ画面（key 'play'・scene.start('play', {index})）
 // 押す＝忍者の場所から線を引き始める／動かす＝線を伸ばす（墨が切れたら先が赤く光って止まる）／離す＝resolveDash を1回だけ呼び、結果を絵にする
 // 線を引いている間は敵の時間が DRAW_SLOW 倍。指は1本だけ（線の途中の2本目は無視＝Review Focus 3）
-import { t } from '../i18n/i18n.js?v=16';
-import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=16';
-import { crisp } from '../ui/pixel.js?v=16';
-import { play as sfx } from '../ui/sfx.js?v=16';
-import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW, HERO_FRAME, FOE_SCALE, BOSS_SCALE, HERO_SCALE } from '../config.js?v=16';
-import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=16';
-import { resolveDash, foePos, starsFor } from '../core/dash.js?v=16';
-import { loadSave, writeSave, recordClear, learnKaton, markSeen, recordScore, totalBest } from '../core/save.js?v=16';
-import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=16';
-import { STAGES, katonFor } from '../data/stages.js?v=16';
-import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=16';
-import { platformStore, sendScore } from '../platform.js?v=16';
+// 夜の墓地（10/18）：墓石で止まる（灰色の線で前もって見せる）・人魂が動く・縮地＝墓石か人魂をまたいだ後に指を止めると印→離すと印まで飛ぶ
+import { t } from '../i18n/i18n.js?v=17';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=17';
+import { crisp } from '../ui/pixel.js?v=17';
+import { play as sfx } from '../ui/sfx.js?v=17';
+import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW, HERO_FRAME, FOE_SCALE, BOSS_SCALE, HERO_SCALE, WALL } from '../config.js?v=17';
+import { startStroke, addPoint, isSwipe, pointAt, pathLength } from '../core/path.js?v=17';
+import { resolveDash, foePos, starsFor } from '../core/dash.js?v=17';
+import { firstWallD, markAt, SHUKU_HOLD, SHUKU_STILL } from '../core/walls.js?v=17';
+import { loadSave, writeSave, recordClear, learnKaton, learnShukuchi, markSeen, recordScore, totalBest } from '../core/save.js?v=17';
+import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=17';
+import { ALL_STAGES, areaOf, jutsuFor } from '../data/areas.js?v=17';
+import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=17';
+import { platformStore, sendScore } from '../platform.js?v=17';
 
-const LINE = 0x96dcff, RED = 0xe0503c;
+const LINE = 0x96dcff, RED = 0xe0503c, GRAY = 0x8a8a96, JUMP = 0x9fb4ff;
+const HINTS = { slash: 'play.hintSlash', katon: 'play.hintKaton', wall: 'play.hintWall', hitodama: 'play.hintHitodama', shukuchi: 'play.hintShukuchi' };
+const BOSS_HINTS = { boss: 'play.hintBoss', bossOni: 'play.hintBossOni' };
+const depthOf = (bottomY) => 1 + bottomY / 10000; // 下にある物ほど手前（墓石の列の奥の敵は墓石の後ろに）
+// 線の a〜b の所を点の並びにする（灰色の線・飛ぶ所を描き分ける）
+function part(points, a, b) { const out = []; for (let d = a; d < b; d += 8) out.push(pointAt(points, d)); out.push(pointAt(points, b)); return out; }
 
 export class PlayScene extends Phaser.Scene {
   constructor() { super('play'); }
 
   preload() {
     this.load.image('bg_yashiki', 'assets/art/bg_yashiki.png');
+    this.load.image('bg_bochi', 'assets/art/bg_bochi.png');
     this.load.image('makibishi', 'assets/art/makibishi.png');
+    this.load.image('haka', 'assets/art/haka.png'); // 墓石
+    this.load.image('hitodama', 'assets/art/hitodama.png'); // 人魂
     this.load.image('pose_in', 'assets/art/pose_in.png'); // 印を結ぶ忍者（火遁）
     this.load.image('pose_noto', 'assets/art/pose_noto.png'); // 納刀の決め（クリア）
     this.load.image('pose_kamae', 'assets/art/pose_kamae.png'); // 低い構え（3・2・1）
@@ -32,18 +42,27 @@ export class PlayScene extends Phaser.Scene {
 
   create(data) {
     crisp(this);
-    this.index = Math.max(0, Math.min(STAGES.length - 1, data?.index ?? 0));
-    this.stage = STAGES[this.index];
-    this.katon = katonFor(this.stage);
+    this.index = Math.max(0, Math.min(ALL_STAGES.length - 1, data?.index ?? 0));
+    this.stage = ALL_STAGES[this.index];
+    this.where = areaOf(this.index); // どの場所の何番目か
+    ({ katon: this.katon, shukuchi: this.shukuchi } = jutsuFor(this.stage));
+    this.walls = this.stage.walls ?? [];
     this.save = loadSave(platformStore());
     this.learned = false; this.ghost = null; this.hint = null; // 同じ画面の部品を使い回す＝前の間の状態を持ち越さない（最終点検 I2・I3）
-    if (this.stage.lesson === 'katon' && !this.save.katon) { this.save = learnKaton(this.save); writeSave(platformStore(), this.save); this.learned = true; }
+    this.mark = null; this.still = 0; this.wallTold = false;
+    if (this.stage.lesson === 'katon' && !this.save.katon) { this.save = learnKaton(this.save); writeSave(platformStore(), this.save); this.learned = 'katon'; }
+    if (this.stage.lesson === 'shukuchi' && !this.save.shukuchi) { this.save = learnShukuchi(this.save); writeSave(platformStore(), this.save); this.learned = 'shukuchi'; }
     this.wt = 0; this.stop = 0; this.moves = 0; this.stroke = null; this.pid = null; this.dash = null; this.over = false; this.slain = [];
     this.ready = false; this.clock = 0; this.killPts = 0; this.shown = 0; // 3・2・1 の後で動く・時計・敵の点・上の数字が今見せている点
 
-    this.add.image(0, 0, 'bg_yashiki').setOrigin(0).setScale(W / 180);
-    this.traps = this.stage.traps.map((p, i) => this.add.image(p.x, p.y, 'makibishi').setScale(4).setAngle(i * 23));
-    this.foes = this.stage.foes.map(foeFlags).map((f) => ({ ...f, spr: this.add.image(f.x, f.y, `foe_${f.type}`).setScale(FOES[f.type].boss ? BOSS_SCALE : FOE_SCALE) }));
+    this.add.image(0, 0, this.where.area.bg).setOrigin(0).setScale(W / 180);
+    // 墓石：絵の足元を当たりの長方形の下の辺にそろえる
+    this.wallSpr = this.walls.map((w) => this.add.image(w.x, w.y + WALL.h / 2, 'haka').setOrigin(0.5, 1).setScale(2).setDepth(depthOf(w.y + WALL.h / 2)));
+    // 罠：まきびし（止まっている）・人魂（玉の真ん中が当たりの中心・動く）
+    this.traps = this.stage.traps.map((p, i) => (p.kind === 'hitodama'
+      ? this.add.image(p.x, p.y, 'hitodama').setOrigin(0.5, 0.8).setScale(2)
+      : this.add.image(p.x, p.y, 'makibishi').setScale(4).setAngle(i * 23)));
+    this.foes = this.stage.foes.map(foeFlags).map((f) => ({ ...f, spr: this.add.image(f.x, f.y, `foe_${f.type}`).setScale(FOES[f.type].scale ?? (FOES[f.type].boss ? BOSS_SCALE : FOE_SCALE)) }));
     // ボスの残りの体力＝赤い丸（当てるたびに1つ消える・10/18 本人「倒し方がわかりずらい」）
     for (const f of this.foes) if (f.hp > 1) f.hpPips = Array.from({ length: f.hp }, () => this.add.circle(0, 0, 13, 0xe0503c).setStrokeStyle(3, 0xffffff).setDepth(6));
     // 刀で斬れない敵の頭に、効く術の印（10/18 本人「どの敵にどの術が効くか分かるように」）
@@ -62,7 +81,7 @@ export class PlayScene extends Phaser.Scene {
     this.fx = this.add.graphics().setDepth(6);
     this.puffs = [];
 
-    this.add.text(30, 40, t('play.stage', { n: this.index + 1 }), textStyle(40, GOLD)).setOrigin(0, 0.5).setDepth(8);
+    this.add.text(30, 40, t('play.stage', { n: this.where.local + 1 }), textStyle(40, GOLD)).setOrigin(0, 0.5).setDepth(8); // 場所ごとの番号
     this.clockText = this.add.text(30, 84, t('play.time', { s: '0.0' }), textStyle(30)).setOrigin(0, 0.5).setDepth(8);
     this.scoreText = this.add.text(W / 2, 60, t('play.score', { n: 0 }), textStyle(44, '#ffffff')).setOrigin(0.5).setDepth(8); // 上の点数（10/18 本人「上部に点数カウンター」）
     this.movesText = this.add.text(W - 30, 40, '', textStyle(32)).setOrigin(1, 0.5).setDepth(8);
@@ -111,25 +130,27 @@ export class PlayScene extends Phaser.Scene {
 
   // 1番の間＝一の太刀の見本・6番の間＝火遁の見本（答えの1本目を薄くなぞって見せる）
   showLesson() {
-    if (this.stage.hint === 'boss') { // ボスの間：倒し方を下に出す（最初にさわると消える）
-      this.hint = this.add.text(W / 2, H - 380, t('play.hintBoss'), textStyle(34, GOLD)).setOrigin(0.5).setDepth(8); // 忍者（下）と化け猫（上）の間
+    if (BOSS_HINTS[this.stage.hint]) { // ボスの間：倒し方を下に出す（最初にさわると消える）
+      this.hint = this.add.text(W / 2, H - 380, t(BOSS_HINTS[this.stage.hint]), textStyle(34, GOLD)).setOrigin(0.5).setDepth(8); // 忍者（下）とボス（上）の間
       return;
     }
     const kind = this.stage.lesson;
     if (!kind) return;
-    const pts = [this.stage.start, ...this.stage.solution[0].points];
-    this.ghost = { pts, k: 0 };
-    const key = kind === 'katon' ? 'play.hintKaton' : 'play.hintSlash';
-    this.hint = this.add.text(W / 2, H - 150, t(key), textStyle(36, GOLD)).setOrigin(0.5).setDepth(8);
+    const first = this.stage.solution[0], pts = [this.stage.start, ...first.points];
+    this.ghost = { pts, k: 0, mark: first.mark !== undefined ? first.points[first.mark] : null }; // 縮地の見本は印の所に輪
+    // 教えの一言は題の下に帯を敷いて（版16で忍者を大きくしたら、下に出すと忍者に重なった）
+    const tx = this.add.text(W / 2, 178, t(HINTS[kind]), textStyle(36, GOLD)).setOrigin(0.5).setDepth(8);
+    const band = this.add.rectangle(W / 2, 178, W, tx.height + 24, 0x0b0a16, 0.6).setDepth(7.9);
+    this.hint = { destroy: () => { tx.destroy(); band.destroy(); } };
     if (this.learned) this.learnShow();
   }
 
-  // 火遁を覚えた：印を結ぶ忍者を大きく出して「火遁を覚えた！」
+  // 術を覚えた：印を結ぶ忍者を大きく出して「○○を覚えた！」（火遁・縮地）
   learnShow() {
     const c = this.add.container(W / 2, H / 2).setDepth(10);
     c.add(this.add.rectangle(0, 0, W, 760, 0x000000, 0.6));
     c.add(this.add.image(0, -60, 'pose_in').setScale(2.4));
-    c.add(this.add.text(0, 300, t('play.learnKaton'), textStyle(64, GOLD)).setOrigin(0.5));
+    c.add(this.add.text(0, 300, t(this.learned === 'shukuchi' ? 'play.learnShukuchi' : 'play.learnKaton'), textStyle(64, GOLD)).setOrigin(0.5));
     c.setAlpha(0);
     this.tweens.add({ targets: c, alpha: 1, duration: 200 });
     this.tweens.add({ targets: c, alpha: 0, delay: 1800, duration: 300, onComplete: () => c.destroy() });
@@ -148,6 +169,7 @@ export class PlayScene extends Phaser.Scene {
     this.stroke = startStroke({ x: this.hero.x, y: this.hero.y });
     this.stroke = addPoint(this.stroke, { x: p.worldX, y: p.worldY }, this.stage.ink);
     this.downAt = { x: p.worldX, y: p.worldY }; this.travel = 0;
+    this.finger = { ...this.downAt }; this.anchor = { ...this.downAt }; this.still = 0; this.mark = null; // 縮地の止め
     if (this.ghost || this.hint) { this.ghost = null; this.hint?.destroy(); this.hint = null; }
   }
 
@@ -155,6 +177,21 @@ export class PlayScene extends Phaser.Scene {
     if (p.id !== this.pid || !this.stroke) return;
     this.travel = Math.max(this.travel, Math.hypot(p.worldX - this.downAt.x, p.worldY - this.downAt.y)); // 指が押した所からどこまで離れたか
     this.stroke = addPoint(this.stroke, { x: p.worldX, y: p.worldY }, this.stage.ink);
+    this.finger = { x: p.worldX, y: p.worldY };
+  }
+
+  // 縮地の止め：指が SHUKU_STILL px 以内に SHUKU_HOLD 秒いたら、印を置けるか聞く（本当の時間で数える＝線を引く間のゆっくりに関係ない）
+  holdCheck(real) {
+    if (!this.stroke || !this.shukuchi || this.mark !== null) return;
+    if (Math.hypot(this.finger.x - this.anchor.x, this.finger.y - this.anchor.y) > SHUKU_STILL) { this.anchor = { ...this.finger }; this.still = 0; return; }
+    this.still += real;
+    if (this.still < SHUKU_HOLD) return;
+    this.still = 0;
+    const m = markAt({ ...this.stroke, mark: this.mark }, { walls: this.walls, traps: this.stage.traps, t: this.wt, travel: this.travel });
+    if (m === null) return;
+    this.mark = m; sfx('mark');
+    const e = this.stroke.points[this.stroke.points.length - 1], ring = this.add.circle(e.x, e.y, 20).setStrokeStyle(6, JUMP).setDepth(7);
+    this.tweens.add({ targets: ring, scale: 2.2, alpha: 0, duration: 380, onComplete: () => ring.destroy() });
   }
 
   up(p) {
@@ -164,9 +201,30 @@ export class PlayScene extends Phaser.Scene {
     if (!s || !isSwipe(s, this.travel)) return; // 押してすぐ離した・指が動いていない＝何もしない（手数も増えない）
     this.moves++; this.refreshMoves();
     const live = this.foes.filter((f) => !f.dead);
-    const res = resolveDash({ foes: live, traps: this.stage.traps, points: s.points, t0: this.wt, katon: this.katon });
-    this.dash = { res, points: s.points, d: 0, ki: 0, hi: 0, combo: 0 };
-    sfx('swish');
+    const jump = this.mark ?? 0; this.mark = null;
+    const res = resolveDash({ foes: live, traps: this.stage.traps, walls: this.walls, points: s.points, t0: this.wt, katon: this.katon, jump });
+    this.dash = { res, points: s.points, d: res.jump, ki: 0, hi: 0, combo: 0 };
+    if (res.jump > 0) this.jumpFx(pointAt(s.points, 0), pointAt(s.points, res.jump)); else sfx('swish');
+  }
+
+  // 縮地：元の場所に影を残して、印の所へ一瞬で移る
+  jumpFx(a, b) {
+    sfx('warp');
+    const ghost = this.add.sprite(a.x, a.y, 'hero', 0).setScale(HERO_SCALE).setDepth(5).setAlpha(0.6).setTint(JUMP);
+    this.tweens.add({ targets: ghost, alpha: 0, scaleX: HERO_SCALE * 0.4, duration: 260, onComplete: () => ghost.destroy() });
+    this.puff(a.x, a.y, JUMP); this.puff(b.x, b.y, JUMP);
+    this.hero.setPosition(b.x, b.y);
+  }
+
+  // 墓石で止まった：コツンと揺れる（失敗ではない・その間で初めての時だけ字で言う）
+  wallBump(i) {
+    sfx('thud'); this.cameras.main.shake(90, 0.006);
+    const w = this.wallSpr[i];
+    if (w) this.tweens.add({ targets: w, x: w.x + 6, yoyo: true, duration: 45, repeat: 3 });
+    if (this.wallTold || !w) return;
+    this.wallTold = true;
+    const msg = this.add.text(w.x, w.y - 170, t('play.wallStop'), textStyle(32, '#ffd27a')).setOrigin(0.5).setDepth(9);
+    this.tweens.add({ targets: msg, y: msg.y - 60, alpha: 0, delay: 800, duration: 600, onComplete: () => msg.destroy() });
   }
 
   update(time, deltaMs) {
@@ -176,7 +234,9 @@ export class PlayScene extends Phaser.Scene {
     if (this.ready && !this.over) { this.clock += real; this.clockText.setText(t('play.time', { s: this.clock.toFixed(1) })); } // 時計は本当の時間（ゆっくりや止めに関係なく進む）
     if (!this.dash && this.ready) this.wt += dt * (this.stroke ? DRAW_SLOW : 1);
     if (this.dash && dt > 0) this.stepDash(dt);
-    for (const f of this.foes) if (!f.dead) { const q = foePos(f, this.wt); f.spr.setPosition(q.x, q.y + Math.sin(this.wt * 3 + q.x) * 3); f.badge?.setPosition(q.x, q.y - f.spr.displayHeight / 2 - 8); f.hpPips?.forEach((c, i, a) => c.setPosition(q.x + (i - (a.length - 1) / 2) * 34, q.y - f.spr.displayHeight / 2 - 48)); }
+    this.holdCheck(real);
+    this.stage.traps.forEach((tr, i) => { if (!tr.move) return; const q = foePos(tr, this.wt), s = this.traps[i]; s.setPosition(q.x, q.y).setAlpha(0.8 + 0.2 * Math.sin(this.time.now / 120 + i)).setDepth(depthOf(q.y + 20)); }); // 人魂がゆらゆら行き来する
+    for (const f of this.foes) if (!f.dead) { const q = foePos(f, this.wt); f.spr.setPosition(q.x, q.y + Math.sin(this.wt * 3 + q.x) * 3).setDepth(depthOf(q.y + f.spr.displayHeight / 2)); f.badge?.setPosition(q.x, q.y - f.spr.displayHeight / 2 - 8); f.hpPips?.forEach((c, i, a) => c.setPosition(q.x + (i - (a.length - 1) / 2) * 34, q.y - f.spr.displayHeight / 2 - 48)); }
     this.draw(real);
   }
 
@@ -194,7 +254,8 @@ export class PlayScene extends Phaser.Scene {
     if (D.d < D.res.len) return;
     this.hero.setFrame(0).setAngle(0);
     this.dash = null;
-    if (D.res.trapHit) return this.fail();
+    if (D.res.trapHit) return this.fail(this.stage.traps[D.res.trapHit.index]?.kind ?? 'makibishi');
+    if (D.res.wallHit) this.wallBump(D.res.wallHit.index);
     if (D.res.burn) this.burn(D.res.burn);
     const allDead = this.foes.every((f) => f.dead);
     if (D.combo >= 2 && !allDead) this.banner(t('play.combo', { n: D.combo }), '', 0.8); // 最後の1本の連斬は納刀の決めの中で見せる（重ならないように）
@@ -260,11 +321,19 @@ export class PlayScene extends Phaser.Scene {
       this.ghost.k = (this.ghost.k + dt / 1.8) % 1;
       const pts = this.ghost.pts, n = Math.max(2, Math.floor(pts.length * this.ghost.k) + 1);
       g.lineStyle(12, LINE, 0.45); g.strokePoints(pts.slice(0, n));
+      if (this.ghost.mark) { g.lineStyle(6, JUMP, 0.8); g.strokeCircle(this.ghost.mark.x, this.ghost.mark.y, 26); }
     }
     if (this.stroke && this.stroke.points.length > 1) {
-      const left = 1 - this.stroke.len / this.stage.ink;
-      g.lineStyle(14, LINE, 0.35 + 0.5 * left); g.strokePoints(this.stroke.points);
-      g.lineStyle(4, 0xffffff, 1); g.strokePoints(this.stroke.points);
+      const pts = this.stroke.points, total = pathLength(pts), left = 1 - this.stroke.len / this.stage.ink;
+      const from = this.mark ?? 0, stop = this.walls.length ? firstWallD(pts, this.walls, from) : null; // 印より前は飛ぶ＝墓石を数えない
+      if (from > 0) { const j = part(pts, 0, from), m = pointAt(pts, from); g.lineStyle(6, JUMP, 0.6); g.strokePoints(j); g.lineStyle(6, JUMP, 1); g.strokeCircle(m.x, m.y, 22); } // 飛ぶ所は細く青く・印に輪
+      const live = part(pts, from, stop ?? total);
+      if (live.length > 1) { g.lineStyle(14, LINE, 0.35 + 0.5 * left); g.strokePoints(live); g.lineStyle(4, 0xffffff, 1); g.strokePoints(live); }
+      if (stop !== null) { // 墓石から先は暗い灰色＋止まる所に橙の×＝ここで止まる（灰色だけでは石の色にまぎれた）
+        const dead = part(pts, stop, total), x = pointAt(pts, stop);
+        g.lineStyle(12, 0x000000, 0.45); g.strokePoints(dead); g.lineStyle(4, GRAY, 0.9); g.strokePoints(dead);
+        g.lineStyle(7, 0xff9a40, 1); g.lineBetween(x.x - 16, x.y - 16, x.x + 16, x.y + 16); g.lineBetween(x.x - 16, x.y + 16, x.x + 16, x.y - 16);
+      }
       if (this.stroke.clipped) { // 墨が切れた＝先が赤く光って止まる（本人の決定）
         const e = this.stroke.points[this.stroke.points.length - 1], k = 0.6 + 0.4 * Math.sin(this.time.now / 90);
         g.fillStyle(RED, 0.35 * k); g.fillCircle(e.x, e.y, 34);
@@ -273,7 +342,7 @@ export class PlayScene extends Phaser.Scene {
     }
     if (this.dash) { // 駆け抜けた跡
       const D = this.dash, tail = [];
-      for (let s = Math.max(0, D.d - 260); s <= D.d; s += 12) tail.push(pointAt(D.points, s));
+      for (let s = Math.max(D.res.jump, D.d - 260); s <= D.d; s += 12) tail.push(pointAt(D.points, s)); // 飛んだ所には跡を残さない
       if (tail.length > 1) { g.lineStyle(10, 0xffffff, 0.5); g.strokePoints(tail); }
     }
     const f = this.fx; f.clear();
@@ -293,14 +362,14 @@ export class PlayScene extends Phaser.Scene {
     this.time.delayedCall(sec * 1000, () => c.destroy());
   }
 
-  fail() {
+  fail(kind = 'makibishi') {
     this.over = true; sfx('fail'); this.cameras.main.shake(200, 0.015);
-    this.save = markSeen(this.save, 'makibishi'); writeSave(platformStore(), this.save); // ふれたら図鑑に
+    this.save = markSeen(this.save, kind); writeSave(platformStore(), this.save); // ふれたら図鑑に
     const c = this.add.container(W / 2, H / 2).setDepth(12); // まきびしを踏んで膝をつく忍者（合図の字＝11より前）
     c.add(this.add.rectangle(0, 0, W, 700, 0x000000, 0.6));
     c.add(this.add.image(0, -60, 'pose_shippai').setScale(2.3));
     c.add(this.add.text(0, 230, t('play.fail'), textStyle(64, GOLD)).setOrigin(0.5));
-    c.add(this.add.text(0, 295, t('play.failSub'), textStyle(32)).setOrigin(0.5));
+    c.add(this.add.text(0, 295, t(kind === 'hitodama' ? 'play.failSubHitodama' : 'play.failSub'), textStyle(32)).setOrigin(0.5));
     this.time.delayedCall(1400, () => this.scene.restart({ index: this.index }));
   }
 
@@ -309,12 +378,12 @@ export class PlayScene extends Phaser.Scene {
     const stars = starsFor(this.moves, this.stage.par);
     let s = recordClear(this.save, this.stage.id, stars);
     for (const type of this.slain) s = markSeen(s, type);
-    if (this.stage.traps.length) s = markSeen(s, 'makibishi'); // まきびしの間を越えたら図鑑に
+    for (const tr of this.stage.traps) s = markSeen(s, tr.kind ?? 'makibishi'); // まきびし・人魂の間を越えたら図鑑に
     const sec = this.clock, total = roomScore({ killPts: this.killPts, stars, sec });
     const isBest = total > (s.best[this.stage.id] ?? 0);
     s = recordScore(s, this.stage.id, total);
     this.save = s; writeSave(platformStore(), s);
-    sendScore(totalBest(s)); // YouTube 版：10の間の最高点の合計
+    sendScore(totalBest(s)); // YouTube 版：全部の間の最高点の合計
     this.time.delayedCall(300, () => this.notoShow(lastCombo));
     this.time.delayedCall(1600, () => this.result(stars, { sec, total, isBest }));
   }
@@ -343,11 +412,14 @@ export class PlayScene extends Phaser.Scene {
     lines.forEach((l, i) => c.add(this.add.text(0, -200 + i * 50, l, textStyle(32)).setOrigin(0.5)));
     c.add(this.add.text(0, -40, t('res.total', { n: sc.total }), textStyle(52, '#ffffff')).setOrigin(0.5));
     if (sc.isBest) c.add(this.add.text(0, 20, t('res.best'), textStyle(32, '#ff9a40')).setOrigin(0.5));
-    const last = this.index >= STAGES.length - 1;
+    const last = this.index >= ALL_STAGES.length - 1, areaEnd = this.where.local >= this.where.area.stages.length - 1;
+    const next = last ? ['play.toClear', () => this.scene.start('clear')] // 最後の場所の最後の間の後はクリアへ
+      : areaEnd ? ['play.nextArea', () => this.scene.start('area', { index: this.index + 1 })] // 場所の最後の間の後は次の場所の題へ
+        : ['play.next', () => this.scene.start('play', { index: this.index + 1 })];
     const btns = [
-      [last ? 'play.toClear' : 'play.next', () => (last ? this.scene.start('clear') : this.scene.start('play', { index: this.index + 1 }))], // 最後の間の後は武家屋敷のクリアへ
+      next,
       ['play.retry', () => this.scene.restart({ index: this.index })],
-      ...(last ? [] : [['play.map', () => this.scene.start('map')]]),
+      ...(last ? [] : [['play.map', () => this.scene.start('map', { area: this.where.a })]]),
     ];
     btns.forEach(([key, fn], i) => {
       const y = 110 + i * 100;

@@ -1,26 +1,25 @@
-// 武家屋敷のクリア（key 'clear'）：星の合計・点数の合計・「次の場所は作っている途中」（Playables の決まり＝続きが無いと分かる）
-import { t } from '../i18n/i18n.js?v=16';
-import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=16';
-import { crisp } from '../ui/pixel.js?v=16';
-import { W, H, HERO_FRAME } from '../config.js?v=16';
-import { loadSave, clearSummary } from '../core/save.js?v=16';
-import { STAGES } from '../data/stages.js?v=16';
-import { platformStore } from '../platform.js?v=16';
-import { play as sfx } from '../ui/sfx.js?v=16';
+// クリア（key 'clear'・最後の場所の最後の間の後）：星の合計・点数の合計・「次の場所は作っている途中」（Playables の決まり＝続きが無いと分かる）
+import { t } from '../i18n/i18n.js?v=17';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=17';
+import { crisp } from '../ui/pixel.js?v=17';
+import { W, H, HERO_FRAME } from '../config.js?v=17';
+import { loadSave, clearSummary } from '../core/save.js?v=17';
+import { ALL_STAGES } from '../data/areas.js?v=17';
+import { platformStore } from '../platform.js?v=17';
+import { play as sfx } from '../ui/sfx.js?v=17';
 
 export class ClearScene extends Phaser.Scene {
   constructor() { super('clear'); }
 
   preload() {
-    this.load.image('bg_yashiki', 'assets/art/bg_yashiki.png');
-    this.load.image('foe_nekoma', 'assets/foes/nekoma.png');
+    this.load.image('bg_bochi', 'assets/art/bg_bochi.png');
     this.load.spritesheet('hero', 'assets/art/hero.png', { frameWidth: HERO_FRAME.w, frameHeight: HERO_FRAME.h });
   }
 
   create() {
     crisp(this);
-    this.add.image(0, 0, 'bg_yashiki').setOrigin(0).setScale(W / 180).setAlpha(0.45);
-    const sum = clearSummary(loadSave(platformStore()), STAGES.map((s) => s.id));
+    this.add.image(0, 0, 'bg_bochi').setOrigin(0).setScale(W / 180).setAlpha(0.45);
+    const sum = clearSummary(loadSave(platformStore()), ALL_STAGES.map((s) => s.id));
     this.add.text(W / 2, 200, t('clear.title'), textStyle(72, GOLD)).setOrigin(0.5);
     this.add.sprite(W / 2, 420, 'hero', 0).setScale(2);
     this.add.text(W / 2, 600, t('clear.stars', { n: sum.stars, m: sum.maxStars }), textStyle(44)).setOrigin(0.5);

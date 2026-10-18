@@ -2,15 +2,15 @@
 // 1〜5＝一の太刀／6＝火遁を覚える（ぬりかべの固まり）／7〜9＝混ぜ／10＝ボス化け猫（hp 3）
 // solution＝★3の答えの線（at＝指を離す時刻・秒）。tests/stages.test.js が答えを流して「★3で解ける」を確かめる
 // 動く敵は move（dx, dy, period）。答えは動く敵がいちばん端にいる時（sin＝1・動きがいちばん遅い所）に通す
-import { INK } from '../config.js?v=16';
+import { INK } from '../config.js?v=17';
 
-const P = (x, y) => ({ x, y });
+export const P = (x, y) => ({ x, y });
 // 輪の線：下（cx, cy+r）から始めて1周（火遁）
-const ring = (cx, cy, r, n = 36) => Array.from({ length: n + 1 }, (_, i) => {
+export const ring = (cx, cy, r, n = 36) => Array.from({ length: n + 1 }, (_, i) => {
   const a = Math.PI / 2 + (i / n) * Math.PI * 2;
   return P(Math.round(cx + r * Math.cos(a)), Math.round(cy + r * Math.sin(a)));
 });
-const F = (id, type, x, y, move) => (move ? { id, type, x, y, move } : { id, type, x, y });
+export const F = (id, type, x, y, move) => (move ? { id, type, x, y, move } : { id, type, x, y });
 
 export const STAGES = [
   { // 1：まっすぐ1本で3体（一の太刀の見本）
