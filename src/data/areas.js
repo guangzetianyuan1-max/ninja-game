@@ -1,7 +1,7 @@
 // 場所の並び（武家屋敷 → 夜の墓地）と、全部の間をつないだ並び（画面はこちらを使う）
 // STAGES（武家屋敷の10）は今のまま＝katonFor と今の試験を壊さない（設計書 2026-10-18-ninja-bochi-design 8.5）
-import { STAGES } from './stages.js?v=18';
-import { BOCHI } from './bochi.js?v=18';
+import { STAGES } from './stages.js?v=19';
+import { BOCHI } from './bochi.js?v=19';
 
 export const AREAS = [
   { id: 'yashiki', bg: 'bg_yashiki', stages: STAGES },

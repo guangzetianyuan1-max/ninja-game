@@ -1,10 +1,10 @@
 // 場所の題（key 'area'・scene.start('area', {index})）：次の場所の背景に大きな名前を2秒（たたくと先へ）→ その場所の1の間
-import { t } from '../i18n/i18n.js?v=18';
-import { textStyle, GOLD } from '../ui/text.js?v=18';
-import { crisp } from '../ui/pixel.js?v=18';
-import { W, H } from '../config.js?v=18';
-import { AREAS, areaOf } from '../data/areas.js?v=18';
-import { play as sfx } from '../ui/sfx.js?v=18';
+import { t } from '../i18n/i18n.js?v=19';
+import { textStyle, GOLD } from '../ui/text.js?v=19';
+import { crisp } from '../ui/pixel.js?v=19';
+import { W, H } from '../config.js?v=19';
+import { AREAS, areaOf } from '../data/areas.js?v=19';
+import { play as sfx } from '../ui/sfx.js?v=19';
 
 export class AreaScene extends Phaser.Scene {
   constructor() { super('area'); }

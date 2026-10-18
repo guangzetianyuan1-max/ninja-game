@@ -1,12 +1,12 @@
 // 表紙：武家屋敷の背景・宙を舞う忍者（ゆっくり上下に浮き、床に影）・題・「たたいて始める」
 // 描いたら YouTube に firstFrameReady、たたける時に gameReady
 // 忍者の絵は Gemini では跳ばなかった（片足立ちになった）＝画面で浮かせて宙を舞って見せる（10/18）
-import { t } from '../i18n/i18n.js?v=18';
-import { textStyle, GOLD } from '../ui/text.js?v=18';
-import { crisp } from '../ui/pixel.js?v=18';
-import { W, H } from '../config.js?v=18';
-import { signalFirstFrame, signalGameReady } from '../platform.js?v=18';
-import { PARADE } from '../data/parade.js?v=18';
+import { t } from '../i18n/i18n.js?v=19';
+import { textStyle, GOLD } from '../ui/text.js?v=19';
+import { crisp } from '../ui/pixel.js?v=19';
+import { W, H } from '../config.js?v=19';
+import { signalFirstFrame, signalGameReady } from '../platform.js?v=19';
+import { PARADE } from '../data/parade.js?v=19';
 
 const FLOAT_Y = 640, FLOAT_AMP = 26, FLOOR_Y = 975;
 // 百鬼夜行の行列：2列（奥＝小さく暗く遅い・手前＝大きく明るい）。足元の高さ・大きさ・色・1秒に進む px・間隔

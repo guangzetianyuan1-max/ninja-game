@@ -1,9 +1,9 @@
 // 夜の墓地の10の間（設計書 2026-10-18-ninja-bochi-design 6）
 // walls＝墓石（中心・当たりは config の WALL）。traps の kind:'hitodama'＝人魂（move で行き来）
-// solution の mark＝縮地の印の点（points の何番目か）。印より前は飛ぶ＝斬らない・墓石と人魂を越える
+// 縮地（墓地6の間から）を覚えた後は、答えの線が墓石をまたぐと飛び越える（人魂は飛び越えない）
 // 動く物は武家屋敷と同じく、いちばん端（sin＝±1）か、通る時の場所で当たるように at を決めた（tests/bochi.test.js が流して確かめる）
-import { INK } from '../config.js?v=18';
-import { P, ring, F } from './stages.js?v=18';
+import { INK } from '../config.js?v=19';
+import { P, ring, F } from './stages.js?v=19';
 
 const H = (x, y, move) => ({ x, y, kind: 'hitodama', move }); // 人魂
 const ROW = (y) => [24, 120, 216, 312, 408, 504, 600, 696].map((x) => P(x, y)); // 端から端まで隙間のない墓石の列（96px おき＝当たりの幅 100 より狭く重ねる）
@@ -40,20 +40,20 @@ export const BOCHI = [
       { at: 2, points: [P(360, 560), P(560, 380)] },
     ],
   },
-  { // 6：縮地を覚える。墓石の囲い（すき間なし）の中へ飛ぶ
+  { // 6：縮地を覚える。墓石の囲い（すき間なし）をまたいで引くと飛び越えて中へ
     id: 'bochi-6', ink: INK, start: P(360, 1100), lesson: 'shukuchi', par: [1, 2], traps: [], walls: BOX,
     foes: [F('a', 'kyokotsu', 260, 470), F('b', 'onmoraki', 460, 470), F('c', 'kitsunebi', 360, 660)],
-    solution: [{ at: 0, mark: 0, points: [P(360, 770), P(260, 470), P(460, 470)] }],
+    solution: [{ at: 0, points: [P(360, 770), P(260, 470), P(460, 470)] }],
   },
-  { // 7：墓石の列と人魂を飛び越える
+  { // 7：人魂をよけて、墓石の列を飛び越える
     id: 'bochi-7', ink: INK, start: P(360, 1100), par: [1, 2], traps: [H(360, 840, { dx: 200, dy: 0, period: 3 })], walls: ROW(640),
     foes: [F('c', 'kyokotsu', 360, 450), F('a', 'kitsunebi', 180, 330, { dx: 80, dy: 0, period: 4 }), F('b', 'onmoraki', 560, 330)],
-    solution: [{ at: 1, mark: 0, points: [P(360, 540), P(360, 450), P(260, 330), P(560, 330)] }],
+    solution: [{ at: 1, points: [P(360, 540), P(360, 450), P(260, 330), P(560, 330)] }],
   },
   { // 8：飛んでから火遁
     id: 'bochi-8', ink: INK, start: P(360, 1100), par: [1, 2], traps: [H(200, 880, { dx: 120, dy: 0, period: 2.5 })], walls: ROW(700),
     foes: [F('a', 'kyokotsu', 300, 440), F('b', 'onmoraki', 420, 440), F('c', 'kitsunebi', 360, 330)],
-    solution: [{ at: 0, mark: 0, points: [P(360, 610), ...ring(360, 450, 150)] }],
+    solution: [{ at: 0, points: [P(360, 610), ...ring(360, 450, 150)] }],
   },
   { // 9：全部の混ぜ（速い一反木綿・人魂・がしゃどくろ）
     id: 'bochi-9', ink: INK, start: P(360, 1100), par: [2, 3], traps: [H(360, 560, { dx: 180, dy: 0, period: 3 })], walls: [P(250, 760), P(470, 760)],
@@ -67,7 +67,7 @@ export const BOCHI = [
     id: 'bochi-10', ink: INK, start: P(360, 1100), par: [3, 4], traps: [H(360, 860, { dx: 220, dy: 0, period: 3 })], walls: ROW(660), hint: 'bossOni',
     foes: [F('boss', 'onibaba', 360, 380, { dx: 120, dy: 0, period: 5 }), F('a', 'kyokotsu', 120, 520), F('b', 'onmoraki', 600, 520)], // 手下は鬼婆より手前（後ろだと大きな鬼婆に隠れた）
     solution: [
-      { at: 0, mark: 0, points: [P(360, 560), P(360, 380), P(120, 520)] },
+      { at: 0.75, points: [P(360, 560), P(457, 380), P(120, 520)] }, // 人魂が右の端にいる時（飛び越えないので当たらない時に通す）
       { at: 2.5, points: [P(360, 380), P(600, 520)] },
       { at: 3.75, points: [P(240, 380), P(240, 560)] },
     ],

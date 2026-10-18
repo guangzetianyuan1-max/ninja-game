@@ -1,6 +1,6 @@
 // 線の計算（画面から離した純粋な関数・tests/path.test.js）
 // 線は忍者の今の場所から始まる。墨（ink）を使い切ったら、その所で止まり clipped=true（その後の指の動きは線にならない＝本人の決定）
-import { W, H, MIN_STROKE, STEP } from '../config.js?v=18';
+import { W, H, MIN_STROKE, STEP } from '../config.js?v=19';
 
 const dist = (a, b) => Math.hypot(b.x - a.x, b.y - a.y);
 
@@ -20,23 +20,6 @@ export function pointAt(points, d) {
   }
   const a = points[points.length - 2], b = points[points.length - 1];
   return { x: b.x, y: b.y, ang: Math.atan2(b.y - a.y, b.x - a.x) };
-}
-
-// 線の頭から d 進んだ所から先の線（縮地の印より後ろ・火遁の輪を見る所）
-export function sliceFrom(points, d) {
-  const copy = (q) => ({ x: q.x, y: q.y });
-  if (d <= 0) return points.map(copy);
-  let acc = 0;
-  for (let i = 1; i < points.length; i++) {
-    const a = points[i - 1], b = points[i], l = dist(a, b);
-    if (l > 0 && acc + l >= d) {
-      const k = (d - acc) / l, head = { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k };
-      const rest = points.slice(i).map(copy);
-      return rest.length && rest[0].x === head.x && rest[0].y === head.y ? rest : [head, ...rest];
-    }
-    acc += l;
-  }
-  return [copy(points[points.length - 1])];
 }
 
 export const clampToField = (p) => ({ x: Math.min(W, Math.max(0, p.x)), y: Math.min(H, Math.max(0, p.y)) });
