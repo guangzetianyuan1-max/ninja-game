@@ -29,3 +29,9 @@ export const learnKaton = (save) => ({ ...save, katon: true });
 export const markSeen = (save, id) => (save.seen.includes(id) ? save : { ...save, seen: [...save.seen, id] });
 export const recordScore = (save, id, score) => ({ ...save, best: { ...save.best, [id]: Math.max(score, save.best?.[id] ?? 0) } });
 export const totalBest = (save) => Object.values(save.best ?? {}).reduce((a, b) => a + b, 0);
+// クリアの画面の集計：星の合計・取れる星の最大・最高点の合計（ids＝その場所の間の id）
+export const clearSummary = (save, ids) => ({
+  stars: ids.reduce((a, id) => a + (save.stars[id] ?? 0), 0),
+  maxStars: ids.length * 3,
+  score: ids.reduce((a, id) => a + (save.best?.[id] ?? 0), 0),
+});

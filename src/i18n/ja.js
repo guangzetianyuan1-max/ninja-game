@@ -65,4 +65,11 @@ export default {
   'res.speed': "速さ {s}秒　{n}点",
   'res.total': "合計 {n}点",
   'res.best': "新記録！",
+  'clear.title': "武家屋敷 クリア！",
+  'clear.stars': "星 {n} / {m}",
+  'clear.score': "合計 {n}点",
+  'clear.next': "次の場所は、いま作っています。\nお楽しみに。",
+  'clear.again': "点数を上げる",
+  'clear.map': "間を選ぶ",
+  'play.toClear': "先へ",
 };

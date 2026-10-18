@@ -65,4 +65,11 @@ export default {
   'res.speed': "Speed {s}s  {n}",
   'res.total': "Total {n}",
   'res.best': "New best!",
+  'clear.title': "Residence Cleared!",
+  'clear.stars': "Stars {n} / {m}",
+  'clear.score': "Total {n}",
+  'clear.next': "The next place is still being made. Stay tuned.",
+  'clear.again': "Beat your score",
+  'clear.map': "Rooms",
+  'play.toClear': "Continue",
 };

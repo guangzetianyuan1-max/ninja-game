@@ -1,18 +1,18 @@
 // 遊ぶ画面（key 'play'・scene.start('play', {index})）
 // 押す＝忍者の場所から線を引き始める／動かす＝線を伸ばす（墨が切れたら先が赤く光って止まる）／離す＝resolveDash を1回だけ呼び、結果を絵にする
 // 線を引いている間は敵の時間が DRAW_SLOW 倍。指は1本だけ（線の途中の2本目は無視＝Review Focus 3）
-import { t } from '../i18n/i18n.js?v=5';
-import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=5';
-import { crisp } from '../ui/pixel.js?v=5';
-import { play as sfx } from '../ui/sfx.js?v=5';
-import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW } from '../config.js?v=5';
-import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=5';
-import { resolveDash, foePos, starsFor } from '../core/dash.js?v=5';
-import { loadSave, writeSave, recordClear, learnKaton, markSeen, recordScore, totalBest } from '../core/save.js?v=5';
-import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=5';
-import { STAGES, katonFor } from '../data/stages.js?v=5';
-import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=5';
-import { platformStore, sendScore } from '../platform.js?v=5';
+import { t } from '../i18n/i18n.js?v=6';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=6';
+import { crisp } from '../ui/pixel.js?v=6';
+import { play as sfx } from '../ui/sfx.js?v=6';
+import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW } from '../config.js?v=6';
+import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=6';
+import { resolveDash, foePos, starsFor } from '../core/dash.js?v=6';
+import { loadSave, writeSave, recordClear, learnKaton, markSeen, recordScore, totalBest } from '../core/save.js?v=6';
+import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=6';
+import { STAGES, katonFor } from '../data/stages.js?v=6';
+import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=6';
+import { platformStore, sendScore } from '../platform.js?v=6';
 
 const LINE = 0x96dcff, RED = 0xe0503c;
 
@@ -290,7 +290,7 @@ export class PlayScene extends Phaser.Scene {
     if (sc.isBest) c.add(this.add.text(0, 20, t('res.best'), textStyle(32, '#ff9a40')).setOrigin(0.5));
     const last = this.index >= STAGES.length - 1;
     const btns = [
-      [last ? 'play.map' : 'play.next', () => (last ? this.scene.start('map') : this.scene.start('play', { index: this.index + 1 }))],
+      [last ? 'play.toClear' : 'play.next', () => (last ? this.scene.start('clear') : this.scene.start('play', { index: this.index + 1 }))], // 最後の間の後は武家屋敷のクリアへ
       ['play.retry', () => this.scene.restart({ index: this.index })],
       ...(last ? [] : [['play.map', () => this.scene.start('map')]]),
     ];
