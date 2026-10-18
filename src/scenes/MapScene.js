@@ -1,16 +1,19 @@
 // 間を選ぶ（key 'map'）：武家屋敷の10の間を2列×5段・星・開いていない間は鍵・図鑑へ
-import { t } from '../i18n/i18n.js?v=12';
-import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=12';
-import { crisp } from '../ui/pixel.js?v=12';
-import { W } from '../config.js?v=12';
-import { loadSave, isOpen } from '../core/save.js?v=12';
-import { STAGES } from '../data/stages.js?v=12';
-import { platformStore } from '../platform.js?v=12';
+import { t } from '../i18n/i18n.js?v=13';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=13';
+import { crisp } from '../ui/pixel.js?v=13';
+import { W } from '../config.js?v=13';
+import { loadSave, isOpen } from '../core/save.js?v=13';
+import { STAGES } from '../data/stages.js?v=13';
+import { platformStore } from '../platform.js?v=13';
 
 export class MapScene extends Phaser.Scene {
   constructor() { super('map'); }
 
-  preload() { this.load.image('bg_yashiki', 'assets/art/bg_yashiki.png'); }
+  preload() {
+    this.load.image('bg_yashiki', 'assets/art/bg_yashiki.png');
+    this.load.image('pose_kamae', 'assets/art/pose_kamae.png');
+  }
 
   create() {
     crisp(this);
@@ -18,6 +21,7 @@ export class MapScene extends Phaser.Scene {
     const save = loadSave(platformStore()), ids = STAGES.map((s) => s.id);
     this.add.rectangle(W / 2, 110, W, 120, 0x0b0a16, 0.8);
     this.add.text(W / 2, 110, t('map.title'), textStyle(60, GOLD)).setOrigin(0.5);
+    this.add.image(W - 80, 104, 'pose_kamae').setScale(0.58); // 題の横に低い構えの忍者
     STAGES.forEach((s, i) => {
       const x = i % 2 === 0 ? 200 : 520, y = 260 + Math.floor(i / 2) * 170;
       const open = isOpen(save, i, ids), stars = save.stars[s.id] ?? 0;

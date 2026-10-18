@@ -1,18 +1,18 @@
 // 遊ぶ画面（key 'play'・scene.start('play', {index})）
 // 押す＝忍者の場所から線を引き始める／動かす＝線を伸ばす（墨が切れたら先が赤く光って止まる）／離す＝resolveDash を1回だけ呼び、結果を絵にする
 // 線を引いている間は敵の時間が DRAW_SLOW 倍。指は1本だけ（線の途中の2本目は無視＝Review Focus 3）
-import { t } from '../i18n/i18n.js?v=12';
-import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=12';
-import { crisp } from '../ui/pixel.js?v=12';
-import { play as sfx } from '../ui/sfx.js?v=12';
-import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW, HERO_FRAME } from '../config.js?v=12';
-import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=12';
-import { resolveDash, foePos, starsFor } from '../core/dash.js?v=12';
-import { loadSave, writeSave, recordClear, learnKaton, markSeen, recordScore, totalBest } from '../core/save.js?v=12';
-import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=12';
-import { STAGES, katonFor } from '../data/stages.js?v=12';
-import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=12';
-import { platformStore, sendScore } from '../platform.js?v=12';
+import { t } from '../i18n/i18n.js?v=13';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=13';
+import { crisp } from '../ui/pixel.js?v=13';
+import { play as sfx } from '../ui/sfx.js?v=13';
+import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW, HERO_FRAME } from '../config.js?v=13';
+import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=13';
+import { resolveDash, foePos, starsFor } from '../core/dash.js?v=13';
+import { loadSave, writeSave, recordClear, learnKaton, markSeen, recordScore, totalBest } from '../core/save.js?v=13';
+import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=13';
+import { STAGES, katonFor } from '../data/stages.js?v=13';
+import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=13';
+import { platformStore, sendScore } from '../platform.js?v=13';
 
 const LINE = 0x96dcff, RED = 0xe0503c;
 
@@ -24,6 +24,7 @@ export class PlayScene extends Phaser.Scene {
     this.load.image('makibishi', 'assets/art/makibishi.png');
     this.load.image('pose_in', 'assets/art/pose_in.png'); // 印を結ぶ忍者（火遁）
     this.load.image('pose_noto', 'assets/art/pose_noto.png'); // 納刀の決め（クリア）
+    this.load.image('pose_kamae', 'assets/art/pose_kamae.png'); // 低い構え（3・2・1）
     this.load.spritesheet('hero', 'assets/art/hero.png', { frameWidth: HERO_FRAME.w, frameHeight: HERO_FRAME.h });
     for (const [id, f] of Object.entries(FOES)) this.load.image(`foe_${id}`, `assets/${f.img}`);
   }
@@ -76,6 +77,10 @@ export class PlayScene extends Phaser.Scene {
 
   // 3・2・1・始め！（10/18 本人）。それまでは線を引けず、敵も止まっている
   countdown() {
+    // 数字の後ろに低い構えの忍者を大きく薄く（「始め！」で消える）
+    const kamae = this.add.image(W / 2, H / 2 + 40, 'pose_kamae').setScale(2.6).setAlpha(0).setDepth(10);
+    this.tweens.add({ targets: kamae, alpha: 0.55, duration: 250 });
+    this.time.delayedCall(3 * 650, () => this.tweens.add({ targets: kamae, alpha: 0, x: W / 2 + 120, duration: 220, onComplete: () => kamae.destroy() }));
     const words = ['3', '2', '1', t('play.go')];
     words.forEach((w, i) => this.time.delayedCall(i * 650, () => {
       const tx = this.add.text(W / 2, H / 2 - 40, w, textStyle(i < 3 ? 160 : 110, GOLD)).setOrigin(0.5).setDepth(11).setScale(1.4);

@@ -1,12 +1,12 @@
 // 武家屋敷のクリア（key 'clear'）：星の合計・点数の合計・「次の場所は作っている途中」（Playables の決まり＝続きが無いと分かる）
-import { t } from '../i18n/i18n.js?v=12';
-import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=12';
-import { crisp } from '../ui/pixel.js?v=12';
-import { W, H, HERO_FRAME } from '../config.js?v=12';
-import { loadSave, clearSummary } from '../core/save.js?v=12';
-import { STAGES } from '../data/stages.js?v=12';
-import { platformStore } from '../platform.js?v=12';
-import { play as sfx } from '../ui/sfx.js?v=12';
+import { t } from '../i18n/i18n.js?v=13';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=13';
+import { crisp } from '../ui/pixel.js?v=13';
+import { W, H, HERO_FRAME } from '../config.js?v=13';
+import { loadSave, clearSummary } from '../core/save.js?v=13';
+import { STAGES } from '../data/stages.js?v=13';
+import { platformStore } from '../platform.js?v=13';
+import { play as sfx } from '../ui/sfx.js?v=13';
 
 export class ClearScene extends Phaser.Scene {
   constructor() { super('clear'); }
