@@ -2,7 +2,7 @@
 // 1〜5＝一の太刀／6＝火遁を覚える（ぬりかべの固まり）／7〜9＝混ぜ／10＝ボス化け猫（hp 3）
 // solution＝★3の答えの線（at＝指を離す時刻・秒）。tests/stages.test.js が答えを流して「★3で解ける」を確かめる
 // 動く敵は move（dx, dy, period）。答えは動く敵がいちばん端にいる時（sin＝1・動きがいちばん遅い所）に通す
-import { INK } from '../config.js?v=6';
+import { INK } from '../config.js?v=7';
 
 const P = (x, y) => ({ x, y });
 // 輪の線：下（cx, cy+r）から始めて1周（火遁）
