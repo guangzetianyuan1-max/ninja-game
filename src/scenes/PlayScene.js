@@ -1,18 +1,18 @@
 // 遊ぶ画面（key 'play'・scene.start('play', {index})）
 // 押す＝忍者の場所から線を引き始める／動かす＝線を伸ばす（墨が切れたら先が赤く光って止まる）／離す＝resolveDash を1回だけ呼び、結果を絵にする
 // 線を引いている間は敵の時間が DRAW_SLOW 倍。指は1本だけ（線の途中の2本目は無視＝Review Focus 3）
-import { t } from '../i18n/i18n.js?v=10';
-import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=10';
-import { crisp } from '../ui/pixel.js?v=10';
-import { play as sfx } from '../ui/sfx.js?v=10';
-import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW, HERO_FRAME } from '../config.js?v=10';
-import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=10';
-import { resolveDash, foePos, starsFor } from '../core/dash.js?v=10';
-import { loadSave, writeSave, recordClear, learnKaton, markSeen, recordScore, totalBest } from '../core/save.js?v=10';
-import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=10';
-import { STAGES, katonFor } from '../data/stages.js?v=10';
-import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=10';
-import { platformStore, sendScore } from '../platform.js?v=10';
+import { t } from '../i18n/i18n.js?v=11';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=11';
+import { crisp } from '../ui/pixel.js?v=11';
+import { play as sfx } from '../ui/sfx.js?v=11';
+import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW, HERO_FRAME } from '../config.js?v=11';
+import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=11';
+import { resolveDash, foePos, starsFor } from '../core/dash.js?v=11';
+import { loadSave, writeSave, recordClear, learnKaton, markSeen, recordScore, totalBest } from '../core/save.js?v=11';
+import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=11';
+import { STAGES, katonFor } from '../data/stages.js?v=11';
+import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=11';
+import { platformStore, sendScore } from '../platform.js?v=11';
 
 const LINE = 0x96dcff, RED = 0xe0503c;
 
@@ -22,6 +22,7 @@ export class PlayScene extends Phaser.Scene {
   preload() {
     this.load.image('bg_yashiki', 'assets/art/bg_yashiki.png');
     this.load.image('makibishi', 'assets/art/makibishi.png');
+    this.load.image('pose_in', 'assets/art/pose_in.png'); // 印を結ぶ忍者（火遁）
     this.load.spritesheet('hero', 'assets/art/hero.png', { frameWidth: HERO_FRAME.w, frameHeight: HERO_FRAME.h });
     for (const [id, f] of Object.entries(FOES)) this.load.image(`foe_${id}`, `assets/${f.img}`);
   }
@@ -64,7 +65,7 @@ export class PlayScene extends Phaser.Scene {
     this.inkBar = this.add.graphics().setDepth(8);
     this.refreshMoves();
     this.showLesson();
-    this.countdown();
+    this.time.delayedCall(this.learned ? 2100 : 0, () => this.countdown()); // 火遁を覚えた時は、絵を見せ終わってから 3・2・1
 
     this.input.on('pointerdown', (p) => this.down(p));
     this.input.on('pointermove', (p) => this.move(p));
@@ -107,7 +108,25 @@ export class PlayScene extends Phaser.Scene {
     this.ghost = { pts, k: 0 };
     const key = kind === 'katon' ? 'play.hintKaton' : 'play.hintSlash';
     this.hint = this.add.text(W / 2, H - 150, t(key), textStyle(36, GOLD)).setOrigin(0.5).setDepth(8);
-    if (this.learned) this.banner(t('play.learnKaton'), '', 1.8);
+    if (this.learned) this.learnShow();
+  }
+
+  // 火遁を覚えた：印を結ぶ忍者を大きく出して「火遁を覚えた！」
+  learnShow() {
+    const c = this.add.container(W / 2, H / 2).setDepth(10);
+    c.add(this.add.rectangle(0, 0, W, 760, 0x000000, 0.6));
+    c.add(this.add.image(0, -60, 'pose_in').setScale(2.4));
+    c.add(this.add.text(0, 300, t('play.learnKaton'), textStyle(64, GOLD)).setOrigin(0.5));
+    c.setAlpha(0);
+    this.tweens.add({ targets: c, alpha: 1, duration: 200 });
+    this.tweens.add({ targets: c, alpha: 0, delay: 1800, duration: 300, onComplete: () => c.destroy() });
+  }
+
+  // 火遁を出した瞬間：印を結ぶ忍者が左下から出て消える（遊びは止めない）
+  cutin() {
+    const img = this.add.image(-180, H - 300, 'pose_in').setScale(1.8).setDepth(9);
+    this.tweens.add({ targets: img, x: 170, duration: 180, ease: 'Quad.out' });
+    this.tweens.add({ targets: img, alpha: 0, x: 220, delay: 650, duration: 250, onComplete: () => img.destroy() });
   }
 
   down(p) {
@@ -201,6 +220,7 @@ export class PlayScene extends Phaser.Scene {
 
   burn(poly) {
     sfx('katon');
+    this.cutin();
     const g = this.add.graphics().setDepth(3);
     g.fillStyle(0xff7a2a, 0.55); g.fillPoints(poly, true);
     g.lineStyle(10, 0xffd27a, 0.9); g.strokePoints(poly, true);
