@@ -1,11 +1,11 @@
 // 間を選ぶ（key 'map'）：武家屋敷の10の間を2列×5段・星・開いていない間は鍵・図鑑へ
-import { t } from '../i18n/i18n.js?v=14';
-import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=14';
-import { crisp } from '../ui/pixel.js?v=14';
-import { W } from '../config.js?v=14';
-import { loadSave, isOpen } from '../core/save.js?v=14';
-import { STAGES } from '../data/stages.js?v=14';
-import { platformStore } from '../platform.js?v=14';
+import { t } from '../i18n/i18n.js?v=15';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=15';
+import { crisp } from '../ui/pixel.js?v=15';
+import { W } from '../config.js?v=15';
+import { loadSave, isOpen } from '../core/save.js?v=15';
+import { STAGES } from '../data/stages.js?v=15';
+import { platformStore } from '../platform.js?v=15';
 
 export class MapScene extends Phaser.Scene {
   constructor() { super('map'); }

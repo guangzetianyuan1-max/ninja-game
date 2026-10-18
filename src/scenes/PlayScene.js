@@ -1,18 +1,18 @@
 // 遊ぶ画面（key 'play'・scene.start('play', {index})）
 // 押す＝忍者の場所から線を引き始める／動かす＝線を伸ばす（墨が切れたら先が赤く光って止まる）／離す＝resolveDash を1回だけ呼び、結果を絵にする
 // 線を引いている間は敵の時間が DRAW_SLOW 倍。指は1本だけ（線の途中の2本目は無視＝Review Focus 3）
-import { t } from '../i18n/i18n.js?v=14';
-import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=14';
-import { crisp } from '../ui/pixel.js?v=14';
-import { play as sfx } from '../ui/sfx.js?v=14';
-import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW, HERO_FRAME } from '../config.js?v=14';
-import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=14';
-import { resolveDash, foePos, starsFor } from '../core/dash.js?v=14';
-import { loadSave, writeSave, recordClear, learnKaton, markSeen, recordScore, totalBest } from '../core/save.js?v=14';
-import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=14';
-import { STAGES, katonFor } from '../data/stages.js?v=14';
-import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=14';
-import { platformStore, sendScore } from '../platform.js?v=14';
+import { t } from '../i18n/i18n.js?v=15';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=15';
+import { crisp } from '../ui/pixel.js?v=15';
+import { play as sfx } from '../ui/sfx.js?v=15';
+import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW, HERO_FRAME, FOE_SCALE, BOSS_SCALE, HERO_SCALE } from '../config.js?v=15';
+import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=15';
+import { resolveDash, foePos, starsFor } from '../core/dash.js?v=15';
+import { loadSave, writeSave, recordClear, learnKaton, markSeen, recordScore, totalBest } from '../core/save.js?v=15';
+import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=15';
+import { STAGES, katonFor } from '../data/stages.js?v=15';
+import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=15';
+import { platformStore, sendScore } from '../platform.js?v=15';
 
 const LINE = 0x96dcff, RED = 0xe0503c;
 
@@ -43,7 +43,9 @@ export class PlayScene extends Phaser.Scene {
 
     this.add.image(0, 0, 'bg_yashiki').setOrigin(0).setScale(W / 180);
     this.traps = this.stage.traps.map((p, i) => this.add.image(p.x, p.y, 'makibishi').setScale(4).setAngle(i * 23));
-    this.foes = this.stage.foes.map(foeFlags).map((f) => ({ ...f, spr: this.add.image(f.x, f.y, `foe_${f.type}`).setScale(FOES[f.type].boss ? 1.8 : 1.4) }));
+    this.foes = this.stage.foes.map(foeFlags).map((f) => ({ ...f, spr: this.add.image(f.x, f.y, `foe_${f.type}`).setScale(FOES[f.type].boss ? BOSS_SCALE : FOE_SCALE) }));
+    // ボスの残りの体力＝赤い丸（当てるたびに1つ消える・10/18 本人「倒し方がわかりずらい」）
+    for (const f of this.foes) if (f.hp > 1) f.hpPips = Array.from({ length: f.hp }, () => this.add.circle(0, 0, 13, 0xe0503c).setStrokeStyle(3, 0xffffff).setDepth(6));
     // 刀で斬れない敵の頭に、効く術の印（10/18 本人「どの敵にどの術が効くか分かるように」）
     const MARK_BG = { slash: '#3a5a8c', katon: '#c8501e' }; // 斬＝藍・火＝橙
     for (const f of this.foes) {
@@ -55,7 +57,7 @@ export class PlayScene extends Phaser.Scene {
       let x = -w / 2;
       for (const g of tags) { g.setPosition(x + g.width / 2, 0); x += g.width + 8; }
     }
-    this.hero = this.add.sprite(this.stage.start.x, this.stage.start.y, 'hero', 0).setScale(1.35).setDepth(5);
+    this.hero = this.add.sprite(this.stage.start.x, this.stage.start.y, 'hero', 0).setScale(HERO_SCALE).setDepth(5);
     this.gfx = this.add.graphics().setDepth(4);
     this.fx = this.add.graphics().setDepth(6);
     this.puffs = [];
@@ -109,6 +111,10 @@ export class PlayScene extends Phaser.Scene {
 
   // 1番の間＝一の太刀の見本・6番の間＝火遁の見本（答えの1本目を薄くなぞって見せる）
   showLesson() {
+    if (this.stage.hint === 'boss') { // ボスの間：倒し方を下に出す（最初にさわると消える）
+      this.hint = this.add.text(W / 2, H - 380, t('play.hintBoss'), textStyle(34, GOLD)).setOrigin(0.5).setDepth(8); // 忍者（下）と化け猫（上）の間
+      return;
+    }
     const kind = this.stage.lesson;
     if (!kind) return;
     const pts = [this.stage.start, ...this.stage.solution[0].points];
@@ -142,7 +148,7 @@ export class PlayScene extends Phaser.Scene {
     this.stroke = startStroke({ x: this.hero.x, y: this.hero.y });
     this.stroke = addPoint(this.stroke, { x: p.worldX, y: p.worldY }, this.stage.ink);
     this.downAt = { x: p.worldX, y: p.worldY }; this.travel = 0;
-    if (this.ghost) { this.ghost = null; this.hint?.destroy(); }
+    if (this.ghost || this.hint) { this.ghost = null; this.hint?.destroy(); this.hint = null; }
   }
 
   move(p) {
@@ -170,7 +176,7 @@ export class PlayScene extends Phaser.Scene {
     if (this.ready && !this.over) { this.clock += real; this.clockText.setText(t('play.time', { s: this.clock.toFixed(1) })); } // 時計は本当の時間（ゆっくりや止めに関係なく進む）
     if (!this.dash && this.ready) this.wt += dt * (this.stroke ? DRAW_SLOW : 1);
     if (this.dash && dt > 0) this.stepDash(dt);
-    for (const f of this.foes) if (!f.dead) { const q = foePos(f, this.wt); f.spr.setPosition(q.x, q.y + Math.sin(this.wt * 3 + q.x) * 3); f.badge?.setPosition(q.x, q.y - f.spr.displayHeight / 2 - 8); }
+    for (const f of this.foes) if (!f.dead) { const q = foePos(f, this.wt); f.spr.setPosition(q.x, q.y + Math.sin(this.wt * 3 + q.x) * 3); f.badge?.setPosition(q.x, q.y - f.spr.displayHeight / 2 - 8); f.hpPips?.forEach((c, i, a) => c.setPosition(q.x + (i - (a.length - 1) / 2) * 34, q.y - f.spr.displayHeight / 2 - 48)); }
     this.draw(real);
   }
 
@@ -198,7 +204,7 @@ export class PlayScene extends Phaser.Scene {
   slay(id, D) {
     const f = this.foes.find((o) => o.id === id);
     if (!f || f.dead) return;
-    f.dead = true; D.combo++; f.badge?.destroy();
+    f.dead = true; D.combo++; f.badge?.destroy(); f.hpPips?.forEach((c) => c.destroy());
     this.award(FOES[f.type].boss ? BOSS_KILL : killPoints(D.combo), f.spr.x, f.spr.y);
     this.slain.push(f.type);
     this.puff(f.spr.x, f.spr.y, 0xd8d4e8);
@@ -220,6 +226,7 @@ export class PlayScene extends Phaser.Scene {
     const f = this.foes.find((o) => o.id === id);
     if (!f || f.dead) return;
     f.hp -= 1;
+    const pip = f.hpPips?.pop(); if (pip) this.tweens.add({ targets: pip, scale: 2, alpha: 0, duration: 300, onComplete: () => pip.destroy() });
     this.award(BOSS_HIT, f.spr.x, f.spr.y);
     this.tweens.add({ targets: f.spr, alpha: 0.3, yoyo: true, duration: 90, repeat: 2 });
     this.slashMark(f.spr.x, f.spr.y, 0.6);

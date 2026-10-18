@@ -2,7 +2,7 @@
 // 1〜5＝一の太刀／6＝火遁を覚える（ぬりかべの固まり）／7〜9＝混ぜ／10＝ボス化け猫（hp 3）
 // solution＝★3の答えの線（at＝指を離す時刻・秒）。tests/stages.test.js が答えを流して「★3で解ける」を確かめる
 // 動く敵は move（dx, dy, period）。答えは動く敵がいちばん端にいる時（sin＝1・動きがいちばん遅い所）に通す
-import { INK } from '../config.js?v=14';
+import { INK } from '../config.js?v=15';
 
 const P = (x, y) => ({ x, y });
 // 輪の線：下（cx, cy+r）から始めて1周（火遁）
@@ -70,7 +70,7 @@ export const STAGES = [
     ],
   },
   { // 10：ボス化け猫（3回斬る）
-    id: 'yashiki-10', ink: INK, start: P(360, 1100), par: [3, 4], traps: [],
+    id: 'yashiki-10', ink: INK, start: P(360, 1100), par: [3, 4], traps: [], hint: 'boss', // 倒し方を始めに出す
     foes: [F('boss', 'nekoma', 360, 520), F('a', 'hitotsume', 160, 300), F('b', 'hitotsume', 560, 300)],
     solution: [
       { at: 0, points: [P(360, 520), P(160, 300)] },

@@ -72,4 +72,5 @@ export default {
   'clear.again': "点数を上げる",
   'clear.map': "間を選ぶ",
   'play.toClear': "先へ",
+  'play.hintBoss': "化け猫は3回当てると倒れる\n（刀でも火遁でも）",
 };

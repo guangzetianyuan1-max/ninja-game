@@ -8,4 +8,6 @@ export const HITSTOP = 0.05;    // 斬った瞬間に止める秒
 export const MIN_STROKE = 40;   // これより短い線は手数に数えない
 export const DRAW_SLOW = 0.3;   // 線を引いている間の敵の時間の倍率
 export const HERO_FRAME = { w: 80, h: 110 }; // 主人公の絵の1コマ（tools/prep_hero.py の HERO_W・HERO_H と同じ）
+// 絵の大きさ（10/18 本人「もう一回り大きく」＝1.4/1.8/1.35 から上げた。斬れる幅 HIT_R は変えない）
+export const FOE_SCALE = 1.7, BOSS_SCALE = 2.2, HERO_SCALE = 1.65;
 export const STEP = 8;          // 指がこれより動かない時は線に点を足さない

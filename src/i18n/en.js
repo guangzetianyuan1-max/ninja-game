@@ -72,4 +72,5 @@ export default {
   'clear.again': "Beat your score",
   'clear.map': "Rooms",
   'play.toClear': "Continue",
+  'play.hintBoss': "Hit the Bakeneko 3 times to win\n(blade or Fire Release)",
 };
