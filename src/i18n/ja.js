@@ -85,7 +85,7 @@ export default {
   'play.nextArea': "次の場所へ",
   'play.hintWall': "墓石にぶつかると止まる\nよけて引く",
   'play.hintHitodama': "人魂にふれると失敗\n離れた時に指をはなす",
-  'play.hintShukuchi': "墓石を越えた所で指を止めると\nそこへ飛ぶ「縮地」",
+  'play.hintShukuchi': "墓石を越えたら指を止めて待つ\n青い輪が満ちたら、そこへ飛ぶ「縮地」",
   'play.learnShukuchi': "縮地を覚えた！",
   'play.hintBossOni': "鬼婆は3回当てると倒れる\n（墓石の向こうへは縮地で）",
   'play.wallStop': "墓石で止まった",

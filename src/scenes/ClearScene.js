@@ -1,12 +1,12 @@
 // クリア（key 'clear'・最後の場所の最後の間の後）：星の合計・点数の合計・「次の場所は作っている途中」（Playables の決まり＝続きが無いと分かる）
-import { t } from '../i18n/i18n.js?v=17';
-import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=17';
-import { crisp } from '../ui/pixel.js?v=17';
-import { W, H, HERO_FRAME } from '../config.js?v=17';
-import { loadSave, clearSummary } from '../core/save.js?v=17';
-import { ALL_STAGES } from '../data/areas.js?v=17';
-import { platformStore } from '../platform.js?v=17';
-import { play as sfx } from '../ui/sfx.js?v=17';
+import { t } from '../i18n/i18n.js?v=18';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=18';
+import { crisp } from '../ui/pixel.js?v=18';
+import { W, H, HERO_FRAME } from '../config.js?v=18';
+import { loadSave, clearSummary } from '../core/save.js?v=18';
+import { ALL_STAGES } from '../data/areas.js?v=18';
+import { platformStore } from '../platform.js?v=18';
+import { play as sfx } from '../ui/sfx.js?v=18';
 
 export class ClearScene extends Phaser.Scene {
   constructor() { super('clear'); }

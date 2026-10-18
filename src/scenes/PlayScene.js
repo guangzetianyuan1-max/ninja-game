@@ -2,19 +2,19 @@
 // 押す＝忍者の場所から線を引き始める／動かす＝線を伸ばす（墨が切れたら先が赤く光って止まる）／離す＝resolveDash を1回だけ呼び、結果を絵にする
 // 線を引いている間は敵の時間が DRAW_SLOW 倍。指は1本だけ（線の途中の2本目は無視＝Review Focus 3）
 // 夜の墓地（10/18）：墓石で止まる（灰色の線で前もって見せる）・人魂が動く・縮地＝墓石か人魂をまたいだ後に指を止めると印→離すと印まで飛ぶ
-import { t } from '../i18n/i18n.js?v=17';
-import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=17';
-import { crisp } from '../ui/pixel.js?v=17';
-import { play as sfx } from '../ui/sfx.js?v=17';
-import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW, HERO_FRAME, FOE_SCALE, BOSS_SCALE, HERO_SCALE, WALL } from '../config.js?v=17';
-import { startStroke, addPoint, isSwipe, pointAt, pathLength } from '../core/path.js?v=17';
-import { resolveDash, foePos, starsFor } from '../core/dash.js?v=17';
-import { firstWallD, markAt, SHUKU_HOLD, SHUKU_STILL } from '../core/walls.js?v=17';
-import { loadSave, writeSave, recordClear, learnKaton, learnShukuchi, markSeen, recordScore, totalBest } from '../core/save.js?v=17';
-import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=17';
-import { ALL_STAGES, areaOf, jutsuFor } from '../data/areas.js?v=17';
-import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=17';
-import { platformStore, sendScore } from '../platform.js?v=17';
+import { t } from '../i18n/i18n.js?v=18';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=18';
+import { crisp } from '../ui/pixel.js?v=18';
+import { play as sfx } from '../ui/sfx.js?v=18';
+import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW, HERO_FRAME, FOE_SCALE, BOSS_SCALE, HERO_SCALE, WALL } from '../config.js?v=18';
+import { startStroke, addPoint, isSwipe, pointAt, pathLength } from '../core/path.js?v=18';
+import { resolveDash, foePos, starsFor } from '../core/dash.js?v=18';
+import { firstWallD, markAt, SHUKU_HOLD, SHUKU_STILL } from '../core/walls.js?v=18';
+import { loadSave, writeSave, recordClear, learnKaton, learnShukuchi, markSeen, recordScore, totalBest } from '../core/save.js?v=18';
+import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=18';
+import { ALL_STAGES, areaOf, jutsuFor } from '../data/areas.js?v=18';
+import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=18';
+import { platformStore, sendScore } from '../platform.js?v=18';
 
 const LINE = 0x96dcff, RED = 0xe0503c, GRAY = 0x8a8a96, JUMP = 0x9fb4ff;
 const HINTS = { slash: 'play.hintSlash', katon: 'play.hintKaton', wall: 'play.hintWall', hitodama: 'play.hintHitodama', shukuchi: 'play.hintShukuchi' };
@@ -49,7 +49,7 @@ export class PlayScene extends Phaser.Scene {
     this.walls = this.stage.walls ?? [];
     this.save = loadSave(platformStore());
     this.learned = false; this.ghost = null; this.hint = null; // 同じ画面の部品を使い回す＝前の間の状態を持ち越さない（最終点検 I2・I3）
-    this.mark = null; this.still = 0; this.wallTold = false;
+    this.mark = null; this.still = 0; this.wallTold = false; this.holdReady = false;
     if (this.stage.lesson === 'katon' && !this.save.katon) { this.save = learnKaton(this.save); writeSave(platformStore(), this.save); this.learned = 'katon'; }
     if (this.stage.lesson === 'shukuchi' && !this.save.shukuchi) { this.save = learnShukuchi(this.save); writeSave(platformStore(), this.save); this.learned = 'shukuchi'; }
     this.wt = 0; this.stop = 0; this.moves = 0; this.stroke = null; this.pid = null; this.dash = null; this.over = false; this.slain = [];
@@ -183,12 +183,14 @@ export class PlayScene extends Phaser.Scene {
   // 縮地の止め：指が SHUKU_STILL px 以内に SHUKU_HOLD 秒いたら、印を置けるか聞く（本当の時間で数える＝線を引く間のゆっくりに関係ない）
   holdCheck(real) {
     if (!this.stroke || !this.shukuchi || this.mark !== null) return;
-    if (Math.hypot(this.finger.x - this.anchor.x, this.finger.y - this.anchor.y) > SHUKU_STILL) { this.anchor = { ...this.finger }; this.still = 0; return; }
+    if (Math.hypot(this.finger.x - this.anchor.x, this.finger.y - this.anchor.y) > SHUKU_STILL) { this.anchor = { ...this.finger }; this.still = 0; this.holdReady = false; return; }
     this.still += real;
+    // 置ける所で止めている間は、線の先に輪が満ちていく（何も起きないと待てばいいと分からなかった）
+    this.holdReady = markAt({ ...this.stroke, mark: this.mark }, { walls: this.walls, traps: this.stage.traps, t: this.wt, travel: this.travel }) !== null;
+    if (!this.holdReady) { this.still = 0; return; }
     if (this.still < SHUKU_HOLD) return;
-    this.still = 0;
-    const m = markAt({ ...this.stroke, mark: this.mark }, { walls: this.walls, traps: this.stage.traps, t: this.wt, travel: this.travel });
-    if (m === null) return;
+    this.still = 0; this.holdReady = false;
+    const m = this.stroke.len;
     this.mark = m; sfx('mark');
     const e = this.stroke.points[this.stroke.points.length - 1], ring = this.add.circle(e.x, e.y, 20).setStrokeStyle(6, JUMP).setDepth(7);
     this.tweens.add({ targets: ring, scale: 2.2, alpha: 0, duration: 380, onComplete: () => ring.destroy() });
@@ -329,6 +331,10 @@ export class PlayScene extends Phaser.Scene {
       if (from > 0) { const j = part(pts, 0, from), m = pointAt(pts, from); g.lineStyle(6, JUMP, 0.6); g.strokePoints(j); g.lineStyle(6, JUMP, 1); g.strokeCircle(m.x, m.y, 22); } // 飛ぶ所は細く青く・印に輪
       const live = part(pts, from, stop ?? total);
       if (live.length > 1) { g.lineStyle(14, LINE, 0.35 + 0.5 * left); g.strokePoints(live); g.lineStyle(4, 0xffffff, 1); g.strokePoints(live); }
+      if (this.holdReady && this.mark === null) { // 縮地の止め：輪が満ちたら印
+        const e = pts[pts.length - 1], k = Math.min(1, this.still / SHUKU_HOLD);
+        g.lineStyle(6, JUMP, 1); g.beginPath(); g.arc(e.x, e.y, 30, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * k); g.strokePath();
+      }
       if (stop !== null) { // 墓石から先は暗い灰色＋止まる所に橙の×＝ここで止まる（灰色だけでは石の色にまぎれた）
         const dead = part(pts, stop, total), x = pointAt(pts, stop);
         g.lineStyle(12, 0x000000, 0.45); g.strokePoints(dead); g.lineStyle(4, GRAY, 0.9); g.strokePoints(dead);

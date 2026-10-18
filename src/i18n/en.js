@@ -85,7 +85,7 @@ export default {
   'play.nextArea': "Next place",
   'play.hintWall': "Gravestones stop you\nDraw around them",
   'play.hintHitodama': "Touch a wisp and you fail\nLet go when it moves away",
-  'play.hintShukuchi': "Stop your finger past a stone\nto jump there: Shukuchi",
+  'play.hintShukuchi': "Past a stone, hold your finger still\nWhen the ring fills, you jump: Shukuchi",
   'play.learnShukuchi': "Learned Shukuchi!",
   'play.hintBossOni': "Hit the Onibaba 3 times to win\n(jump the stones with Shukuchi)",
   'play.wallStop': "Stopped by a gravestone",

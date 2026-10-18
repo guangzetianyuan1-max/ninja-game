@@ -1,12 +1,12 @@
 // 墓石（線が止まる壁）と縮地の印（画面から離した純粋な関数・tests/walls.test.js・夜の墓地 10/18）
 // 墓石 = {x, y}（中心）。当たりは config の WALL の長方形
 // 縮地：線を引く途中で指を止めると印。印は「墓石か人魂をまたいだ後」の止めでだけ出す（本人に聞いた案 A＝考えて止めただけでは飛ばない）
-import { WALL, TRAP_R } from '../config.js?v=17';
-import { pathLength, pointAt } from './path.js?v=17';
-import { foePos } from './move.js?v=17';
+import { WALL, TRAP_R } from '../config.js?v=18';
+import { pathLength, pointAt } from './path.js?v=18';
+import { foePos } from './move.js?v=18';
 
 export const SHUKU_HOLD = 0.4;   // 止める秒（画面が本当の時間で数える）
-export const SHUKU_STILL = 12;   // この px 以内なら止まっている
+export const SHUKU_STILL = 30;   // この px 以内なら止まっている（10/18 本人「6がクリアできない」＝12px ではスマホの指の揺れで数え直しになった）
 export const SHUKU_TRAVEL = 60;  // 指がこれだけ動いてからの止めだけ数える（引き始めの迷いを拾わない）
 const SAMPLE = 10;
 

@@ -1,12 +1,12 @@
 // 間を選ぶ（key 'map'・scene.start('map', {area})）：場所ごとに1枚（武家屋敷／夜の墓地）・10の間を2列×5段・星・開いていない間は鍵・図鑑へ
 // 左右の「‹ ›」で場所を替える。開いた時は、いちばん進んだ場所（設計書 2026-10-18-ninja-bochi-design 8.5）
-import { t } from '../i18n/i18n.js?v=17';
-import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=17';
-import { crisp } from '../ui/pixel.js?v=17';
-import { W } from '../config.js?v=17';
-import { loadSave, isOpen } from '../core/save.js?v=17';
-import { AREAS, ALL_STAGES, areaStart } from '../data/areas.js?v=17';
-import { platformStore } from '../platform.js?v=17';
+import { t } from '../i18n/i18n.js?v=18';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=18';
+import { crisp } from '../ui/pixel.js?v=18';
+import { W } from '../config.js?v=18';
+import { loadSave, isOpen } from '../core/save.js?v=18';
+import { AREAS, ALL_STAGES, areaStart } from '../data/areas.js?v=18';
+import { platformStore } from '../platform.js?v=18';
 
 export class MapScene extends Phaser.Scene {
   constructor() { super('map'); }

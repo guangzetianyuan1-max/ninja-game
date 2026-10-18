@@ -2,13 +2,14 @@
 // walls＝墓石（中心・当たりは config の WALL）。traps の kind:'hitodama'＝人魂（move で行き来）
 // solution の mark＝縮地の印の点（points の何番目か）。印より前は飛ぶ＝斬らない・墓石と人魂を越える
 // 動く物は武家屋敷と同じく、いちばん端（sin＝±1）か、通る時の場所で当たるように at を決めた（tests/bochi.test.js が流して確かめる）
-import { INK } from '../config.js?v=17';
-import { P, ring, F } from './stages.js?v=17';
+import { INK } from '../config.js?v=18';
+import { P, ring, F } from './stages.js?v=18';
 
 const H = (x, y, move) => ({ x, y, kind: 'hitodama', move }); // 人魂
 const ROW = (y) => [24, 120, 216, 312, 408, 504, 600, 696].map((x) => P(x, y)); // 端から端まで隙間のない墓石の列（96px おき＝当たりの幅 100 より狭く重ねる）
 // 墓石の囲い（すき間なし）：上と下の列＋左右の柱
-const BOX = [...[168, 264, 360, 456, 552].flatMap((x) => [P(x, 300), P(x, 764)]), ...[416, 532, 648].flatMap((y) => [P(168, y), P(552, y)])];
+// 10/18 本人「6がクリアできない」で一回り広げた（中で線を引く余地を作る）
+const BOX = [...[120, 216, 312, 408, 504, 600].flatMap((x) => [P(x, 280), P(x, 860)]), ...[396, 512, 628, 744].flatMap((y) => [P(120, y), P(600, y)])];
 
 export const BOCHI = [
   { // 1：墓石の見本。まっすぐ引くと止まる＝よけて引く
@@ -41,8 +42,8 @@ export const BOCHI = [
   },
   { // 6：縮地を覚える。墓石の囲い（すき間なし）の中へ飛ぶ
     id: 'bochi-6', ink: INK, start: P(360, 1100), lesson: 'shukuchi', par: [1, 2], traps: [], walls: BOX,
-    foes: [F('a', 'kyokotsu', 300, 470), F('b', 'onmoraki', 420, 470), F('c', 'kitsunebi', 360, 600)],
-    solution: [{ at: 0, mark: 0, points: [P(360, 680), P(300, 470), P(420, 470)] }],
+    foes: [F('a', 'kyokotsu', 260, 470), F('b', 'onmoraki', 460, 470), F('c', 'kitsunebi', 360, 660)],
+    solution: [{ at: 0, mark: 0, points: [P(360, 770), P(260, 470), P(460, 470)] }],
   },
   { // 7：墓石の列と人魂を飛び越える
     id: 'bochi-7', ink: INK, start: P(360, 1100), par: [1, 2], traps: [H(360, 840, { dx: 200, dy: 0, period: 3 })], walls: ROW(640),

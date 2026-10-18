@@ -1,12 +1,12 @@
 // 図鑑（key 'collection'）：2列×5段の札・押すと説明・まだ出会っていない物は「？」
-import { t } from '../i18n/i18n.js?v=17';
-import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=17';
-import { crisp } from '../ui/pixel.js?v=17';
-import { W, H, HERO_FRAME } from '../config.js?v=17';
-import { loadSave } from '../core/save.js?v=17';
-import { COLLECTION, visible } from '../data/collection.js?v=17';
-import { FOES } from '../data/foes.js?v=17';
-import { platformStore } from '../platform.js?v=17';
+import { t } from '../i18n/i18n.js?v=18';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=18';
+import { crisp } from '../ui/pixel.js?v=18';
+import { W, H, HERO_FRAME } from '../config.js?v=18';
+import { loadSave } from '../core/save.js?v=18';
+import { COLLECTION, visible } from '../data/collection.js?v=18';
+import { FOES } from '../data/foes.js?v=18';
+import { platformStore } from '../platform.js?v=18';
 
 export class CollectionScene extends Phaser.Scene {
   constructor() { super('collection'); }
