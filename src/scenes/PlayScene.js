@@ -1,18 +1,18 @@
 // 遊ぶ画面（key 'play'・scene.start('play', {index})）
 // 押す＝忍者の場所から線を引き始める／動かす＝線を伸ばす（墨が切れたら先が赤く光って止まる）／離す＝resolveDash を1回だけ呼び、結果を絵にする
 // 線を引いている間は敵の時間が DRAW_SLOW 倍。指は1本だけ（線の途中の2本目は無視＝Review Focus 3）
-import { t } from '../i18n/i18n.js?v=13';
-import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=13';
-import { crisp } from '../ui/pixel.js?v=13';
-import { play as sfx } from '../ui/sfx.js?v=13';
-import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW, HERO_FRAME } from '../config.js?v=13';
-import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=13';
-import { resolveDash, foePos, starsFor } from '../core/dash.js?v=13';
-import { loadSave, writeSave, recordClear, learnKaton, markSeen, recordScore, totalBest } from '../core/save.js?v=13';
-import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=13';
-import { STAGES, katonFor } from '../data/stages.js?v=13';
-import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=13';
-import { platformStore, sendScore } from '../platform.js?v=13';
+import { t } from '../i18n/i18n.js?v=14';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=14';
+import { crisp } from '../ui/pixel.js?v=14';
+import { play as sfx } from '../ui/sfx.js?v=14';
+import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW, HERO_FRAME } from '../config.js?v=14';
+import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=14';
+import { resolveDash, foePos, starsFor } from '../core/dash.js?v=14';
+import { loadSave, writeSave, recordClear, learnKaton, markSeen, recordScore, totalBest } from '../core/save.js?v=14';
+import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=14';
+import { STAGES, katonFor } from '../data/stages.js?v=14';
+import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=14';
+import { platformStore, sendScore } from '../platform.js?v=14';
 
 const LINE = 0x96dcff, RED = 0xe0503c;
 
@@ -25,6 +25,7 @@ export class PlayScene extends Phaser.Scene {
     this.load.image('pose_in', 'assets/art/pose_in.png'); // 印を結ぶ忍者（火遁）
     this.load.image('pose_noto', 'assets/art/pose_noto.png'); // 納刀の決め（クリア）
     this.load.image('pose_kamae', 'assets/art/pose_kamae.png'); // 低い構え（3・2・1）
+    this.load.image('pose_shippai', 'assets/art/pose_shippai.png'); // 膝をつく（失敗）
     this.load.spritesheet('hero', 'assets/art/hero.png', { frameWidth: HERO_FRAME.w, frameHeight: HERO_FRAME.h });
     for (const [id, f] of Object.entries(FOES)) this.load.image(`foe_${id}`, `assets/${f.img}`);
   }
@@ -288,7 +289,11 @@ export class PlayScene extends Phaser.Scene {
   fail() {
     this.over = true; sfx('fail'); this.cameras.main.shake(200, 0.015);
     this.save = markSeen(this.save, 'makibishi'); writeSave(platformStore(), this.save); // ふれたら図鑑に
-    this.banner(t('play.fail'), t('play.failSub'), 1.3);
+    const c = this.add.container(W / 2, H / 2).setDepth(12); // まきびしを踏んで膝をつく忍者（合図の字＝11より前）
+    c.add(this.add.rectangle(0, 0, W, 700, 0x000000, 0.6));
+    c.add(this.add.image(0, -60, 'pose_shippai').setScale(2.3));
+    c.add(this.add.text(0, 230, t('play.fail'), textStyle(64, GOLD)).setOrigin(0.5));
+    c.add(this.add.text(0, 295, t('play.failSub'), textStyle(32)).setOrigin(0.5));
     this.time.delayedCall(1400, () => this.scene.restart({ index: this.index }));
   }
 
@@ -309,7 +314,7 @@ export class PlayScene extends Phaser.Scene {
 
   // 納刀の決め：間をクリアした瞬間、刀を収めた忍者を大きく出す（その後で結果の画面）
   notoShow(combo) {
-    const c = this.add.container(W / 2, H / 2).setDepth(10);
+    const c = this.add.container(W / 2, H / 2).setDepth(12); // 合図の字（11）より前
     c.add(this.add.rectangle(0, 0, W, 760, 0x000000, 0.55));
     const img = this.add.image(40, -40, 'pose_noto').setScale(2.6);
     c.add(img);
