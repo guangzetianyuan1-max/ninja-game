@@ -1,9 +1,9 @@
 // 駆け抜けの結果（画面から離した純粋な関数・tests/dash.test.js）
 // 指を離した時に1回だけ呼び、結果を画面が絵にする（一時停止で途中から戻っても同じ結果＝Review Focus 4）
 // 敵 foe = {id, x, y, move?: {dx, dy, period}, shield?: true, hp?: number}（shield と hp は呼ぶ側が敵の表から写して渡す）
-import { DASH_SPEED, HIT_R, TRAP_R } from '../config.js?v=15';
-import { pathLength, pointAt } from './path.js?v=15';
-import { findLoop, inside } from './jutsu.js?v=15';
+import { DASH_SPEED, HIT_R, TRAP_R } from '../config.js?v=16';
+import { pathLength, pointAt } from './path.js?v=16';
+import { findLoop, inside } from './jutsu.js?v=16';
 
 const SAMPLE = 10; // 線の上を何 px ごとに見るか
 

@@ -1,18 +1,18 @@
 // 遊ぶ画面（key 'play'・scene.start('play', {index})）
 // 押す＝忍者の場所から線を引き始める／動かす＝線を伸ばす（墨が切れたら先が赤く光って止まる）／離す＝resolveDash を1回だけ呼び、結果を絵にする
 // 線を引いている間は敵の時間が DRAW_SLOW 倍。指は1本だけ（線の途中の2本目は無視＝Review Focus 3）
-import { t } from '../i18n/i18n.js?v=15';
-import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=15';
-import { crisp } from '../ui/pixel.js?v=15';
-import { play as sfx } from '../ui/sfx.js?v=15';
-import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW, HERO_FRAME, FOE_SCALE, BOSS_SCALE, HERO_SCALE } from '../config.js?v=15';
-import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=15';
-import { resolveDash, foePos, starsFor } from '../core/dash.js?v=15';
-import { loadSave, writeSave, recordClear, learnKaton, markSeen, recordScore, totalBest } from '../core/save.js?v=15';
-import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=15';
-import { STAGES, katonFor } from '../data/stages.js?v=15';
-import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=15';
-import { platformStore, sendScore } from '../platform.js?v=15';
+import { t } from '../i18n/i18n.js?v=16';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=16';
+import { crisp } from '../ui/pixel.js?v=16';
+import { play as sfx } from '../ui/sfx.js?v=16';
+import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW, HERO_FRAME, FOE_SCALE, BOSS_SCALE, HERO_SCALE } from '../config.js?v=16';
+import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=16';
+import { resolveDash, foePos, starsFor } from '../core/dash.js?v=16';
+import { loadSave, writeSave, recordClear, learnKaton, markSeen, recordScore, totalBest } from '../core/save.js?v=16';
+import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=16';
+import { STAGES, katonFor } from '../data/stages.js?v=16';
+import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=16';
+import { platformStore, sendScore } from '../platform.js?v=16';
 
 const LINE = 0x96dcff, RED = 0xe0503c;
 

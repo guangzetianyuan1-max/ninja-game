@@ -1,6 +1,6 @@
 // 言葉の切り替えと文の引き方。画面の文字は全部ここを通す（英語が先・分からない言葉は英語）
-import ja from './ja.js?v=15';
-import en from './en.js?v=15';
+import ja from './ja.js?v=16';
+import en from './en.js?v=16';
 
 export const TABLES = { ja, en };
 export const LANGS = ['en', 'ja'];
