@@ -1,18 +1,18 @@
 // 遊ぶ画面（key 'play'・scene.start('play', {index})）
 // 押す＝忍者の場所から線を引き始める／動かす＝線を伸ばす（墨が切れたら先が赤く光って止まる）／離す＝resolveDash を1回だけ呼び、結果を絵にする
 // 線を引いている間は敵の時間が DRAW_SLOW 倍。指は1本だけ（線の途中の2本目は無視＝Review Focus 3）
-import { t } from '../i18n/i18n.js?v=9';
-import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=9';
-import { crisp } from '../ui/pixel.js?v=9';
-import { play as sfx } from '../ui/sfx.js?v=9';
-import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW, HERO_FRAME } from '../config.js?v=9';
-import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=9';
-import { resolveDash, foePos, starsFor } from '../core/dash.js?v=9';
-import { loadSave, writeSave, recordClear, learnKaton, markSeen, recordScore, totalBest } from '../core/save.js?v=9';
-import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=9';
-import { STAGES, katonFor } from '../data/stages.js?v=9';
-import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=9';
-import { platformStore, sendScore } from '../platform.js?v=9';
+import { t } from '../i18n/i18n.js?v=10';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=10';
+import { crisp } from '../ui/pixel.js?v=10';
+import { play as sfx } from '../ui/sfx.js?v=10';
+import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW, HERO_FRAME } from '../config.js?v=10';
+import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=10';
+import { resolveDash, foePos, starsFor } from '../core/dash.js?v=10';
+import { loadSave, writeSave, recordClear, learnKaton, markSeen, recordScore, totalBest } from '../core/save.js?v=10';
+import { killPoints, BOSS_HIT, BOSS_KILL, timeBonus, roomScore } from '../core/score.js?v=10';
+import { STAGES, katonFor } from '../data/stages.js?v=10';
+import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=10';
+import { platformStore, sendScore } from '../platform.js?v=10';
 
 const LINE = 0x96dcff, RED = 0xe0503c;
 
