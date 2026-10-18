@@ -1,17 +1,17 @@
 // 遊ぶ画面（key 'play'・scene.start('play', {index})）
 // 押す＝忍者の場所から線を引き始める／動かす＝線を伸ばす（墨が切れたら先が赤く光って止まる）／離す＝resolveDash を1回だけ呼び、結果を絵にする
 // 線を引いている間は敵の時間が DRAW_SLOW 倍。指は1本だけ（線の途中の2本目は無視＝Review Focus 3）
-import { t } from '../i18n/i18n.js?v=2';
-import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=2';
-import { crisp } from '../ui/pixel.js?v=2';
-import { play as sfx } from '../ui/sfx.js?v=2';
-import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW } from '../config.js?v=2';
-import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=2';
-import { resolveDash, foePos, starsFor } from '../core/dash.js?v=2';
-import { loadSave, writeSave, recordClear, learnKaton, markSeen } from '../core/save.js?v=2';
-import { STAGES, katonFor } from '../data/stages.js?v=2';
-import { FOES, foeFlags, needsJutsu } from '../data/foes.js?v=2';
-import { platformStore } from '../platform.js?v=2';
+import { t } from '../i18n/i18n.js?v=3';
+import { textStyle, buttonStyle, GOLD } from '../ui/text.js?v=3';
+import { crisp } from '../ui/pixel.js?v=3';
+import { play as sfx } from '../ui/sfx.js?v=3';
+import { W, H, DASH_SPEED, HITSTOP, DRAW_SLOW } from '../config.js?v=3';
+import { startStroke, addPoint, isSwipe, pointAt } from '../core/path.js?v=3';
+import { resolveDash, foePos, starsFor } from '../core/dash.js?v=3';
+import { loadSave, writeSave, recordClear, learnKaton, markSeen } from '../core/save.js?v=3';
+import { STAGES, katonFor } from '../data/stages.js?v=3';
+import { FOES, foeFlags, needsJutsu, badgeMarks } from '../data/foes.js?v=3';
+import { platformStore } from '../platform.js?v=3';
 
 const LINE = 0x96dcff, RED = 0xe0503c;
 
@@ -39,11 +39,15 @@ export class PlayScene extends Phaser.Scene {
     this.traps = this.stage.traps.map((p, i) => this.add.image(p.x, p.y, 'makibishi').setScale(4).setAngle(i * 23));
     this.foes = this.stage.foes.map(foeFlags).map((f) => ({ ...f, spr: this.add.image(f.x, f.y, `foe_${f.type}`).setScale(FOES[f.type].boss ? 1.8 : 1.4) }));
     // 刀で斬れない敵の頭に、効く術の印（10/18 本人「どの敵にどの術が効くか分かるように」）
+    const MARK_BG = { slash: '#3a5a8c', katon: '#c8501e' }; // 斬＝藍・火＝橙
     for (const f of this.foes) {
-      const j = needsJutsu(f.type);
-      if (!j) continue;
-      const tag = this.add.text(0, 0, t(`jutsu.mark.${j}`), { ...textStyle(28, '#ffffff'), backgroundColor: '#c8501e', padding: { x: 10, y: 4 } }).setOrigin(0.5).setDepth(6);
-      f.badge = tag;
+      const marks = badgeMarks(f.type);
+      if (!marks.length) continue;
+      const tags = marks.map((j) => this.add.text(0, 0, t(`jutsu.mark.${j}`), { ...textStyle(28, '#ffffff'), backgroundColor: MARK_BG[j], padding: { x: 10, y: 4 } }).setOrigin(0.5).setDepth(6));
+      const w = tags.reduce((s, g) => s + g.width, 0) + 8 * (tags.length - 1);
+      f.badge = this.add.container(0, 0, tags).setDepth(6);
+      let x = -w / 2;
+      for (const g of tags) { g.setPosition(x + g.width / 2, 0); x += g.width + 8; }
     }
     this.hero = this.add.sprite(this.stage.start.x, this.stage.start.y, 'hero', 0).setScale(1.6).setDepth(5);
     this.gfx = this.add.graphics().setDepth(4);

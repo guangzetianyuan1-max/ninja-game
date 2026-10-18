@@ -25,3 +25,12 @@ export function needsJutsu(type) {
   const w = FOES[type]?.weak ?? [];
   return w.includes('slash') ? null : (w[0] ?? null);
 }
+
+// 頭に出す術の印：ボスは効く術を全部（10/18 本人「大きな猫が『火遁』であれば、表示が欲しい」）・刀で斬れない敵は要る術・ほかは出さない（画面を散らかさない）
+export function badgeMarks(type) {
+  const f = FOES[type];
+  if (!f) return [];
+  if (f.boss) return [...f.weak];
+  const j = needsJutsu(type);
+  return j ? [j] : [];
+}
